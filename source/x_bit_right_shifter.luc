@@ -1,9 +1,41 @@
-module x_bit_right_shifter (
-    input clk,  // clock
-    input rst,  // reset
-    output out
+module x_bit_right_shifter #(
+    // Parameter declaration
+    SHIFT = 8 : SHIFT > -1 & SHIFT < 32
+)(
+    input a[32],        // Input to be shifted
+    input shift,        // Whether to perform the shift (1 = shift, 0 = no shift)
+    input pad,          // Padding value (0 or 1)
+    output out[32]      // Output after shifting
 ) {
+    // Instantiate 32 multiplexers
+    mux_2 m[32];
+
+    // Declare an intermediary signal for shifted bits
+    sig shifted_bits[32];
+
     always {
-        out = 0
+        //use repeat to iterate thr every bit
+        repeat (i, 32) {
+            // new bit i, is at i-shift. check if within bounds
+            //assign shifted_bits[i] based on whether the bit is shifted out of range
+            if (i >= SHIFT) {
+               shifted_bits[i] = a[i - SHIFT];
+            } else {
+                //shifted is out of range,souse the padding val
+                shifted_bits[i] = pad; //applied at MSB
+            }
+            
+            //Connect input[0] of each mux to the original bit
+            m[i].in[0] = a[i];
+
+            //Connect input[1] of each mux to the shifted bit
+            m[i].in[1] = shifted_bits[i];
+
+            //Connect the selector of each mux to the shift signal
+            m[i].s0 = shift;
+
+            //assign the output of each mux to the corresponding output bit
+            out[i] = m[i].out;
+        }
     }
 }

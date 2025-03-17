@@ -13,8 +13,22 @@ module shifter #(
     right_shifter right_shifter[SIZE]
         
     always {
+        // left shift input
+        left_shifter.a = a
+        left_shifter.b = b
+        left_shifter.pad = 0
+        
+        // right shift input
+        right_shifter.a = a
+        right_shifter.b = b
+        right_shifter.pad = 0
+        
+        // right arith shift input
+        right_arith_shifter.a = a
+        right_arith_shifter.b = b
+        
         // implement shifter unit logic here
-        shifter_unit.in = 32x{{}}
+        shifter_unit.in = {left_shifter.out, right_arith_shifter.out, right_shifter.out}
         shifter_unit.s0 = alufn[0]
         shifter_unit.s1 = alufn[1]
         
