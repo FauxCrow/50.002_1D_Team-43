@@ -1,8 +1,10 @@
-module bm (
-    input a[32],  
-    input b[32],  
+module bm #(
+    SIZE = 32 : SIZE > 0
+)(
+    input a[SIZE],  
+    input b[SIZE],  
     input alufn[2],  
-    output masked[32] 
+    output masked[SIZE] 
 ) {
     sig result[32]; 
 

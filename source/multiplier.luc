@@ -1,7 +1,9 @@
-module multiplier (
-    input a[32],
-    input b[32],
-    output mul[32]
+module multiplier #(
+    SIZE = 32 : SIZE > 0
+)(
+    input a[SIZE],
+    input b[SIZE],
+    output mul[SIZE]
 ) {
     fa fa[496]
     sig current_row_fa_index[$clog2(496)]

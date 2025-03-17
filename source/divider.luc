@@ -1,8 +1,10 @@
-// extra function: division
-module divider (
-    input a[32], // dividend
-    input b[32], // divisor
-    output d[32] // a/b
+// divide a by b
+module divider #(
+    SIZE = 32 : SIZE > 0
+)(
+    input a[SIZE], // dividend
+    input b[SIZE], // divisor
+    output d[SIZE] // a/b
   ) {
 
   always {

@@ -32,9 +32,11 @@ module shifter #(
         shifter_unit.in[1] = right_arith_shifter.out
         shifter_unit.in[2] = right_shifter.out
         
+        // implement control signals to determine operation
         shifter_unit.s0 = alufn[0]
         shifter_unit.s1 = alufn[1]
         
+        // returns chosen operation
         shift = shifter_unit.out
         
     } 
