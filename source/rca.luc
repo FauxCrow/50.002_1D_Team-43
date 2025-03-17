@@ -6,13 +6,26 @@ module rca #(
     input b[SIZE],
     input cin,
     output cout,
-    output s[SIZE],
+    output s[SIZE]
 ) {
-    
+    fa fa[SIZE]
+     
     always {
         // implement ripple-carry-adder logic here 
-        cout = 0
-        s = 0 
+        fa.a = a
+        fa.b = b
         
-    }
+        repeat (i, SIZE){
+            if (i == 0) {
+                fa.cin[i] = cin
+            }
+            else{
+                fa.cin[i] = fa.cout[i-1] // put in the overflow
+            }
+        }
+        
+        s = fa.cout[SIZE-1]
+        cout = fa.s
+        
+    }    
 }

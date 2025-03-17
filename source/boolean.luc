@@ -6,11 +6,23 @@ module boolean #(
     input alufn[6],
     output bool[SIZE]
 ) {
-    
+   mux_4 boolean_unit[SIZE]
     
     always {
-        // implement boolean unit logic here
-        bool = 0 
+        // create 32 copies of ALUFN signal as input to each mux_4 unit 
+        // the double curly brackets are intentional because
+        // we are creating 2D array: 32 by 4 bits -- 4 bits of the alufn signal
+        boolean_unit.in = 32x{{alufn[3:0]}} 
+        
+        // alufn signal corresponds to truth table of boolean function
+        // in this case, we look to implement each function by simply passing in a and b as s1 and s0
+        // e.g. for AND alufn [3:0] = 1000, where it only return 1 if given two inputs of 1, 
+        //      out will choose alufn[3] = 1 only when a and b is 1
+        // hence, most of the logic will come from what you pass in from alu_manual tester
+        boolean_unit.s0 = a
+        boolean_unit.s1 = b
+        
+        bool = boolean_unit.out
         
     }
     

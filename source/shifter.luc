@@ -4,9 +4,10 @@ module shifter (
     input alufn[6],
     output shift[32]
 ) {
-
+        
     always {
         // implement shifter unit logic here
+        
         shift = 0
         
     } 
