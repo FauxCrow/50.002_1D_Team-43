@@ -10,15 +10,58 @@ module alu (
     const SIZE = 32
     
     adder adder(#SIZE(SIZE))
+    multiplier multiplier
+    // bitmask bitmask
+    // shifter shifter
+    // compare compare(#SIZE(SIZE))
+    boolean boolean(#SIZE(SIZE))
+
+    mux_4 alu_select_4[SIZE] // used for add / mul / bm
+    mux_4 alu_select_4_main[SIZE] // used for mux_4 select, compare, bool, shift
     
     always {
+        // setup selector for mux4
+        alu_select_4.s0 = SIZEx{alufn[0]}
+        alu_select_4.s1 = SIZEx{alufn[1]}
+        
+        // adder inputs
         adder.a = a
         adder.b = b
         adder.alufn = alufn
         
+        // multiplier inputs
+        multiplier.a = a
+        multiplier.b = b
+        
+        // bit masking inputs
+        
+        // add all selections add, multiply as mux_2 in
+        alu_select_4.in = 32x{c{}}
+        /* repeat (i, SIZE){
+            shift_unit.in[i] = c{shifted_pattern, SHIFTx{pad}}
+        }*/
+        
+        // setup selector for mux4main
+        alu_select_4_main.s1 = alufn[5]
+        alu_select_4_main.s0 = alufn[4]
+        
+        // boolean inputs
+        boolean.a = a
+        boolean.b = b
+        boolean.alufn = alufn
+        
+        // shifter inputs
+        
+        // compare inputs
+        
+        // add all selections mux_2, boolean, shifter, compare as mux_4 in
+        //alu_select_4.in = c{}
+        
+        /*
+        
         z = adder.z
         v = adder.v
-        n = adder.n
+        n = adder.n*/
         
         out = 0
         

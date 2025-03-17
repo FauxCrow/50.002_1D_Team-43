@@ -1,14 +1,24 @@
-module shifter (
+module shifter #(
+    SIZE = 32 : SIZE > 0
+)(
     input a[32],
     input b[5],
     input alufn[6],
     output shift[32]
 ) {
+    mux_4 shifter_unit[SIZE]
+    
+    left_shifter left_shifter[SIZE]
+    right_arith_shifter right_arith_shifter[SIZE]
+    right_shifter right_shifter[SIZE]
         
     always {
         // implement shifter unit logic here
+        shifter_unit.in = 32x{{}}
+        shifter_unit.s0 = alufn[0]
+        shifter_unit.s1 = alufn[1]
         
-        shift = 0
+        shift = shifter_unit.out
         
     } 
 }
