@@ -1,0 +1,11 @@
+module right_shifter #(
+    SIZE = 32 : SIZE > 0
+)(
+    input clk,  // clock
+    input rst,  // reset
+    output out
+) {
+    always {
+        out = 0
+    }
+}
