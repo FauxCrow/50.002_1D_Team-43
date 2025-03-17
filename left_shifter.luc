@@ -1,0 +1,41 @@
+module left_shifter #(
+    SIZE = 32: SIZE>0)(
+    input a[SIZE],
+    input b[5],
+    input pad,
+    output shl[SIZE]
+    
+) {
+    
+    x_bit_left_shifter left_shift16(#SHIFT(16))
+    x_bit_left_shifter left_shift8(#SHIFT(8))
+    x_bit_left_shifter left_shift4(#SHIFT(4))
+    x_bit_left_shifter left_shift2(#SHIFT(2))
+    x_bit_left_shifter left_shift1(#SHIFT(1))
+    
+    always{
+        left_shift16.pad = pad
+        left_shift8.pad = pad
+        left_shift4.pad = pad
+        left_shift2.pad = pad
+        left_shift1.pad = pad
+        
+        left_shift16.do_shift = b[4]
+        left_shift8.do_shift = b[3]
+        left_shift4.do_shift = b[2]
+        left_shift2.do_shift = b[1]
+        left_shift1.do_shift = b[0]
+        
+        //connect in cascade manner, such as 
+        left_shift16.a = a;               //First stage takes the original input
+        left_shift8.a = left_shift16.out; //second stage takes first stage output
+        left_shift4.a = left_shift8.out;  //third stage takes second stage output
+        left_shift2.a = left_shift4.out;  
+        left_shift1.a = left_shift2.out;  
+
+        //output is the result of the last stage
+        shl = left_shift1.out;
+        
+        
+    }
+}
