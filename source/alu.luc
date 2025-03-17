@@ -7,14 +7,24 @@ module alu (
     output v,
     output n
 ) {
+    const SIZE = 32
     
-    
+    adder adder(#SIZE(SIZE))
     
     always {
-        // implement alu logic here
-        out = 0 
-        z = 0
-        v = 0 
-        n = 0    
+        adder.a = a
+        adder.b = b
+        adder.alufn = alufn
+        
+        z = adder.z
+        v = adder.v
+        n = adder.n
+        
+        out = 0
+        
+        //alu_output = adder.out
+        //alu_output = c{31x{b0}, compare.cmp}
+        //alu_output = boolean.bool
+        //alu_output = shifter.shift
     }
 }

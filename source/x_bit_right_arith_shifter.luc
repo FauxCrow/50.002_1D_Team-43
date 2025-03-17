@@ -1,0 +1,26 @@
+module x_bit_right_arith_shifter #(
+    SIZE = 31 : SIZE > 0,
+    SHIFT = 8 : SHIFT > -1 & SHIFT < SIZE
+)(
+    input a[SIZE],
+    input do_shift,
+    output out[SIZE]
+) {
+    mux_2 shift_unit[SIZE]
+    sig shifted_pattern[SIZE]
+    sig pad // depends on MSB
+    
+    always {
+        pad = a[SIZE-1] // preserve MSB for vacated bit positions
+        
+        // Define mux2 and sig
+        shift_unit.s0 = SIZEx{do_shift}
+        shifted_pattern = c{pad, a[SIZE-1:SHIFT]}  // Sign-extend shift
+        
+        repeat (i, SIZE){
+            shift_unit.in[i] = c{SHIFTx{pad}, shifted_pattern}
+        }
+        
+        out = shift_unit.out
+    }
+}

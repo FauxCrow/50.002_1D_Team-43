@@ -1,0 +1,9 @@
+module x_bit_right_shifter (
+    input clk,  // clock
+    input rst,  // reset
+    output out
+) {
+    always {
+        out = 0
+    }
+}

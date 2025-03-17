@@ -1,0 +1,27 @@
+module x_bit_left_shifter #(
+    SIZE = 31 : SIZE > 0,
+    SHIFT = 8 : SHIFT > -1 & SHIFT < SIZE
+)(
+    input a[SIZE],
+    input do_shift,
+    input pad, // in this case, pad should be 0
+    output out[SIZE]
+) {
+    // declare an array of SIZE instances of the mux_2 module
+    mux_2 shift_unit[SIZE]
+    sig shifted_pattern[SIZE]
+    
+    always {
+        // Define each s0 in the array of mux_2 as do_shift using concatenation
+        shift_unit.s0 = SIZEx{do_shift}
+        
+        //remaining pattern
+        shifted_pattern = a[SIZE - 1 - SHIFT:0]
+        
+        repeat (i, SIZE){
+            shift_unit.in[i] = c{shifted_pattern, SHIFTx{pad}}
+        }
+        
+        out = shift_unit.out
+    }
+}

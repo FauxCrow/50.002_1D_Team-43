@@ -1,14 +1,20 @@
-module compare (
+module compare #(
+    SIZE = 32 : SIZE > 0
+)(
     input z,
     input v,
     input n,
     input alufn[6],
     output cmp
 ) {
+    mux_4 compare_unit[SIZE]
     
     always {
         
-        cmp = 0
+        compare_unit.s0 = alufn[1]
+        compare_unit.s1 = alufn[2]
+        compare_unit.in = 32x{{alufn[3:0]}} // this is wrong but me tired lol
+        cmp = compare_unit.out
         
     }
 }

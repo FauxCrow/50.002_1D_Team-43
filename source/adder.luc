@@ -3,20 +3,25 @@ module adder #(
 )(
     input a[SIZE],
     input b[SIZE],
-    input alufn_signal[6],
+    input alufn[6],
     output out[SIZE],
     output z,
     output v,
     output n
 ) {
-    
+    rca rca(#SIZE(SIZE))
+    sig xb[SIZE]    //
     
     always {
-        // implement adder/subtractor unit logic here
-        out = 0
-        z = 0
-        v = 0 
-        n = 0
+        xb = b ^ SIZEx{alufn[0]}
+        rca.a = a
+        rca.b = xb
+        rca.cin = alufn[0]
+        
+        out = rca.s
+        z = ~|rca.s
+        v = (~a[SIZE-1] & ~xb[SIZE-1] & rca.s[SIZE-1] | a[SIZE-1] & !xb[SIZE-1] & ~rca.s[SIZE-1])
+        n = rca.s[SIZE-1] // MSB
         
     }
 }
