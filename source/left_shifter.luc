@@ -3,7 +3,6 @@ module left_shifter #(
 )(
     input a[SIZE],
     input b[5],
-    input pad,
     output shl[SIZE]
 ) {
     x_bit_left_shifter left_shift_16(#SHIFT(16))
@@ -13,20 +12,14 @@ module left_shifter #(
     x_bit_left_shifter left_shift_1(#SHIFT(1))
     
     always{
-        left_shift_16.pad = pad
-        left_shift_8.pad = pad
-        left_shift_4.pad = pad
-        left_shift_2.pad = pad
-        left_shift_1.pad = pad
-        
-        // Setup s0 input
+        //setup s0 input
         left_shift_16.do_shift = b[4]
         left_shift_8.do_shift = b[3]
         left_shift_4.do_shift = b[2]
         left_shift_2.do_shift = b[1]
         left_shift_1.do_shift = b[0]
         
-        // pass down output through cascading shifts
+        //pass down output through cascading shifts
         left_shift_16.a = a[31:0]
         left_shift_8.a = left_shift_16.out
         left_shift_4.a = left_shift_8.out
@@ -35,5 +28,4 @@ module left_shifter #(
         
         shl = left_shift_1.out
     }
-    
 }
