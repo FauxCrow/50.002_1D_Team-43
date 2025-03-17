@@ -11,10 +11,16 @@ module compare #(
     
     always {
         
-        compare_unit.s0 = alufn[1]
-        compare_unit.s1 = alufn[2]
-        compare_unit.in = 32x{{alufn[3:0]}} // this is wrong but me tired lol
-        cmp = compare_unit.out
+        //compare_unit.s0 = alufn[1]
+        //compare_unit.s1 = alufn[2]
+        //compare_unit.in = 32x{{alufn[3:0]}} this is wrong but me tired lol
+        //cmp = compare_unit.out
         
+        // assigning inputs and select to mux
+        n_xor_v = n^v
+        compare_unit.in = {x,z,n_xor_v,n_xor_v+z} // inputs
+        compare_unit.s0 = alufn[1] // selects
+        compare_unit.s1 = alufn[2]
+        cmp = compare_unit.out // output
     }
 }
