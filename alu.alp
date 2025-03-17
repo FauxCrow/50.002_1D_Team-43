@@ -1,6 +1,6 @@
 {
     "project": {
-        "type": "V1.2",
+        "type": "V1.3",
         "projectName": "alu",
         "board": "Alchitry Au",
         "sourceFiles": [
@@ -76,13 +76,61 @@
                     "type": "DiskFile",
                     "path": "source/alu_manual_tester.luc"
                 }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/mux_4.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/mux_2.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/divider.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/left_shifter.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/right_arith_shifter.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/x_bit_right_arith_shifter.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/x_bit_left_shifter.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/x_bit_right_shifter.luc"
+                }
             }
         ],
         "constraintFiles": [
             {
                 "file": {
                     "type": "Component",
-                    "path": "Constraints/io.acf"
+                    "path": "Constraints/io_v1.acf"
                 }
             },
             {
