@@ -39,12 +39,10 @@ module alu (
         bitmask.alufn = alufn
         
         // add all selections add, multiply as mux_2 in
-        alu_select_4.in = {adder.out, multiplier.out, bitmask.out} // subtract to be added
-        /* maybe?????????????
-        
-        repeat (i, SIZE){
-            shift_unit.in[i] = c{shifted_pattern, SHIFTx{pad}}
-        }*/
+        alu_select_4.in[0] = adder.out
+        // subtract to be added (alu_select_4.in[1])
+        alu_select_4.in[2] = multiplier.out
+        alu_select_4.in[3] = bitmask.out
         
         // setup selector for mux4main
         alu_select_4_main.s1 = alufn[5]
@@ -63,15 +61,18 @@ module alu (
         // compare inputs
         
         // add all selections mux_2, boolean, shifter, compare as mux_4 in
-        alu_select_4_main.in = {alu_select_4.out, boolean.out, shifter.out} // compare to be added 
-        
+        alu_select_4_main.in = {alu_select_4.out, boolean.out, shifter.out}  
+	alu_select_4_main.in[0] = alu_select_4.out
+	alu_select_4_main.in[1] = boolean.out
+	alu_select_4_main.in[2] = shifter.out
+	// compare to be added (alu_select_4_main.in[3])        
+
         /*
-        
         z = adder.z
         v = adder.v
         n = adder.n*/
         
-        out = 0
+        out = alu_select_4_main.out
         
         //alu_output = adder.out
         //alu_output = c{31x{b0}, compare.cmp}

@@ -28,7 +28,10 @@ module shifter #(
         right_arith_shifter.b = b
         
         // implement shifter unit logic here
-        shifter_unit.in = {left_shifter.out, right_arith_shifter.out, right_shifter.out}
+        shifter_unit.in[0] = left_shifter.out
+        shifter_unit.in[1] = right_arith_shifter.out
+        shifter_unit.in[2] = right_shifter.out
+        
         shifter_unit.s0 = alufn[0]
         shifter_unit.s1 = alufn[1]
         
