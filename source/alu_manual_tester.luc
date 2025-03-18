@@ -2,7 +2,7 @@ module alu_manual_tester#(
     CLK_FREQ ~ 1000 : CLK_FREQ > 0) 
 (
     input clk,  // clock
-    input rst,  // reset
+    input rst,  // reset button
     input io_button[5],
     input io_dip[3][8],
     output io_led[3][8],
@@ -10,10 +10,36 @@ module alu_manual_tester#(
     output io_select[4]
 ) {
     
+    //sig rst // reset signal
     alu alu
     
+    enum States {
+        STORE,
+        START,
+        MANUAL,
+        AUTO,
+        IDLE
+    }
+     
+    const CLK_FREQ = $is_sim() ? 1000 : 10000000 // put 1000 only for sim, 10M on hardware
+    
+    sig counter
+    //sig slow_clock
+    
+    .clk(clk) {
+        // The reset conditioner is used to synchronize the reset signal to the FPGA
+        // clock. This ensures the entire FPGA comes out of reset at the same time.
+        // reset_conditioner reset_cond
+        
+        edge_detector io_button_edge[5](#RISE(5x{{1}}), #FALL(5x{{0}}))
+        button_conditioner io_button_cond[5](#CLK_FREQ(5x{{CLK_FREQ}})) 
+        .rst(rst) {
+            dff states[$width(States)](#INIT(States.IDLE)) 
+        }
+    }
+   
     always {
-        // implement alu tester logic here
+        //implement alu tester logic here
         alu.a = 0
         alu.b = 0
         alu.alufn = 0
@@ -21,5 +47,82 @@ module alu_manual_tester#(
         io_segment = 0
         io_select = 4hF
         
+        counter = 0 // default value of counter
+        
+        /*
+        reset_cond.in = ~rst_n // input raw inverted reset signal
+        rst = reset_cond.out    // conditioned reset
+        */
+        
+        // condition the buttons, then take rising edges only
+        io_button_cond.in = io_button
+        io_button_edge.in = io_button_cond.out
+        
+        
+        // connect dffs
+        states.d = states.q
+        
+        // STATES
+        case (states.q){
+            States.IDLE: 
+                // Default State
+            if (io_button_edge.out[1]){ // Middle Button Press
+            states.d = States.AUTO
+                }
+            else if (io_button_edge.out[0]){ // Upper Button Press
+            states.d = States.MANUAL
+                }
+            
+            States.AUTO:
+            // Run automatic test cases
+            // What is the plan to showcase pass/fail of testcases?
+            states.d = States.IDLE // Reverts back to default state once run
+                
+            States.MANUAL:
+            if (io_button_edge.out[1]){
+            states.d = States.START
+                }
+            if (io_button_edge.out[4]){
+            states.d = States.STORE
+                }
+            if (io_button_edge.out[0]){
+            states.d = States.IDLE
+                }
+            
+            States.STORE:
+            // Every time the right button is pressed, it will store the bits into A & B until all bits have been stored
+            if (io_button_edge.out[3]){
+                if (counter < 5){
+                    counter = counter + 1
+                    if (counter == 1){
+                        alu.a[15:0] = c{io_dip[1][7:0], io_dip[0][7:0]}
+                        }
+                    if (counter == 2){
+                        alu.a[31:16] = c{io_dip[1][7:0], io_dip[0][7:0]}
+                    }
+                    if (counter == 3){
+                        alu.b[15:0] = c{io_dip[1][7:0], io_dip[0][7:0]}
+                        }
+                    if (counter == 4){
+                        alu.b[15:0] = c{io_dip[1][7:0], io_dip[0][7:0]}
+                            }
+                }
+                else {
+                    counter = 0
+                    states.d = States.MANUAL
+                            }
+                }
+                
+            States.START:
+            // Assign bits to ALUFN
+            alu.alufn = io_dip[2][5:0]
+                
+            // Produces a visible outputs on whether a test case passes or fails
+            // How should we implement this?
+            
+            states.d = States.MANUAL // Revert back to MANUAL once finished
+        }
+        
+        // OUTPUT HERE
     }
 }
