@@ -32,7 +32,6 @@ module alu_manual_tester#(
     
     .clk(clk) {
         dff counter_dff[3](#INIT(0))
-        dff pos_dff[2](#INIT(0))
         dff current_test_dff[2](#INIT(0))
         
         dff manual_A_dff[32](#INIT(0))
@@ -62,7 +61,7 @@ module alu_manual_tester#(
         alu.a = 32x{0}
         alu.b = 32x{0}
         alu.alufn = b000000
-        rom.address = ADDRESS[pos_dff.q]
+        rom.address = ADDRESS[current_test_dff.q]
         
         // condition the buttons, then take rising edges only
         io_button_cond.in = io_button
@@ -84,7 +83,7 @@ module alu_manual_tester#(
                 if (io_button_edge.out[1]) { // Middle Button Press
                     states.d = States.AUTO
                 } 
-                else if (io_button_edge.out[3]) { // Up Button Press
+                else if (io_button_edge.out[3]) { // Up Button 
                     if (counter_dff.q < 5) {
                         counter_dff.d = counter_dff.q + 1
                         if (counter_dff.q == 1) { // first 16 bits of A
@@ -103,21 +102,16 @@ module alu_manual_tester#(
                     }
                 }
             
-            States.AUTO:
+            States.AUTO:             
                 led = b01000000  
                 current_value.d = current_test_dff.q
                 
-                // errors
+                decimal_renderer.value = current_value.q // convert the binary output to decimal value 
+                seg.values = decimal_renderer.digits // plug the decimal digits into 7seg controller
+                
                 alu.a = rom.a
                 alu.b = rom.b
                 alu.alufn = rom.alufn
-                
-                // since each function has 4 test cases in the rom, we reset pos to 0 to not exceed this number
-                if (pos_dff.q >= 3) {
-                    pos_dff.d = 0  
-                } else {
-                    pos_dff.d = pos_dff.q + 1
-                }
                 
                 // checks if the test case expected result is right
                 if (alu.out == rom.value) {
@@ -126,11 +120,25 @@ module alu_manual_tester#(
                     led = b01000000  // Fail
                 }
                 
-                // Reverts back to default state once run
-                if (current_test_dff.q >= TEST_CASES) {
-                    current_test_dff.d = 0  // Reset to first test case
+                // If middle button pressed, go back to manual mode
+                if (io_button_edge.out[1]){
+                    current_test_dff.d = 0 
+                    current_value.d = 0
+                    decimal_renderer.value = 0 // convert the binary output to decimal value 
+                    seg.values = decimal_renderer.digits // plug the decimal digits into 7seg controller
                     states.d = States.MANUAL
-                } else {
+                }
+                // if right button pressed, go to next test case
+                if (io_button_edge.out[4]){
+                    // Reverts back to default state once run
+                    if (current_test_dff.q >= TEST_CASES) {
+                        current_test_dff.d = 0 
+                        current_value.d = 0
+                        decimal_renderer.value = 0 // convert the binary output to decimal value 
+                        seg.values = decimal_renderer.digits // plug the decimal digits into 7seg controller
+                        states.d = States.MANUAL
+                    } 
+                    
                     current_test_dff.d = current_test_dff.q + 1
                 }
             
