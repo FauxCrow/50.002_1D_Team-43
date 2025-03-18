@@ -14,20 +14,20 @@ module rca #(
         // implement ripple-carry-adder logic here 
         fa.a = a
         fa.b = b
-
+        fa.cin = 0;
         
         repeat (i, SIZE){
             if (i == 0) {
-                fa.cin[i] = cin
+                fa.cin[0] = cin
             }
             else{
                 fa.cin[i] = fa.cout[i-1] // put in the overflow
             }
+            s[i] = fa.s[i]
         }
         
-        //swapped the cout = fa.s to fa.cout, and s = fa.cout to fa.s
-        s = fa.s
         cout = fa.cout[SIZE-1]
+       
         
     }    
 }
