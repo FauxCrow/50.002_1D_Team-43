@@ -13,15 +13,15 @@ module alu (
     
     // instantiate all control units
     adder adder(#SIZE(SIZE))
-    multiplier multiplier(#SIZE(SIZE))
-    shifter shifter(#SIZE(SIZE))
-    compare compare(#SIZE(SIZE))
-    boolean boolean(#SIZE(SIZE))
-    bm bitmask(#SIZE(SIZE))
-    divider divider(#SIZE(SIZE))
+    multiplier multiplier
+    shifter shifter
+    compare compare
+    boolean boolean
+    bm bitmask
+    divider divider
 
-    mux_4 alu_select_2[SIZE] // used for add / mul
-    mux_4 alu_select_4[SIZE] // used for mux_2 select, compare, bool, shift
+    mux_2 alu_select_2 // used for add / mul
+    mux_4 alu_select_4 // used for mux_2 select, compare, bool, shift
     
     always {
         // setup selector for mux_2
@@ -64,17 +64,17 @@ module alu (
         shifter.b = b
         shifter.alufn = alufn
         
-        // compare inputs
+        // compute 1 bit inputs
         compare.z = z
         compare.v = v
         compare.n = n
         compare.alufn = alufn
         
         // add all selections mux_2, boolean, shifter, compare as mux_4 in
-	    alu_select_4.in[0] = alu_select_2.out
-	    alu_select_4.in[1] = boolean.out
-	    alu_select_4.in[2] = shifter.out
-	    alu_select_4.in[3] = compare.out     
+        alu_select_4.in[0] = alu_select_2.out
+        alu_select_4.in[1] = boolean.bool
+        alu_select_4.in[2] = shifter.shift
+        alu_select_4.in[3] = c{31b0, compare.cmp}
 
         // set out based on output of alu_select
         out = alu_select_4.out   

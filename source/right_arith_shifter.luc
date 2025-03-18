@@ -3,7 +3,7 @@ module right_arith_shifter #(
 )(
     input a[SIZE],
     input b[5],
-    output shl[SIZE]
+    output shr[SIZE]
 ) {
     x_bit_right_arith_shifter right_arith_shift_16(#SHIFT(16))
     x_bit_right_arith_shifter right_arith_shift_8(#SHIFT(8))
@@ -26,6 +26,6 @@ module right_arith_shifter #(
         right_arith_shift_2.a = right_arith_shift_4.out
         right_arith_shift_1.a = right_arith_shift_2.out
         
-        shl = right_arith_shift_1.out
+        shr = right_arith_shift_1.out
     }
 }

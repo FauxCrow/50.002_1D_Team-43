@@ -6,31 +6,30 @@ module shifter #(
     input alufn[6],
     output shift[32]
 ) {
-    mux_4 shifter_unit[SIZE]
+    mux_4 shifter_unit
     
-    left_shifter left_shifter[SIZE]
-    right_arith_shifter right_arith_shifter[SIZE]
-    right_shifter right_shifter[SIZE]
-        
+    left_shifter left_shifter
+    right_arith_shifter right_arith_shifter
+    right_shifter right_shifter
+ 
     always {
         // left shift input
         left_shifter.a = a
         left_shifter.b = b
-        left_shifter.pad = 0
         
         // right shift input
         right_shifter.a = a
         right_shifter.b = b
-        right_shifter.pad = 0
         
         // right arith shift input
         right_arith_shifter.a = a
         right_arith_shifter.b = b
         
         // implement shifter unit logic here
-        shifter_unit.in[0] = left_shifter.out
-        shifter_unit.in[1] = right_arith_shifter.out
-        shifter_unit.in[2] = right_shifter.out
+        shifter_unit.in[0] = left_shifter.shl
+        shifter_unit.in[1] = right_shifter.shr
+        shifter_unit.in[2] = a // if select wrong, nothing changes
+        shifter_unit.in[3] = right_arith_shifter.shr
         
         // implement control signals to determine operation
         shifter_unit.s0 = alufn[0]

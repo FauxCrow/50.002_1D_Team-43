@@ -136,6 +136,12 @@
                     "type": "DiskFile",
                     "path": "source/bm.luc"
                 }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/alu_tester_rom.luc"
+                }
             }
         ],
         "constraintFiles": [

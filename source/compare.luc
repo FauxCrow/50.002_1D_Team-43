@@ -7,7 +7,7 @@ module compare #(
     input alufn[6],
     output cmp
 ) {
-    mux_4 compare_unit[SIZE] //declare 4 to 1 multiplexer (mux_4.luc file)
+    mux_4 compare_unit //declare 4 to 1 multiplexer (mux_4.luc file)
     sig a; //temp variable to store result of xor later 
     
     always {
