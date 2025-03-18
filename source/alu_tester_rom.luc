@@ -1,9 +1,59 @@
 module alu_tester_rom (
-    input clk,  // clock
-    input rst,  // reset
-    output out
+    input pos,
+    input alufn[6],
+    output value
 ) {
-    always {
-        out = 0
+    // implement stored expected values for each test case for each operation
+    const ADD_VALUES = {b00000000000000000000000000000001, b00000000000000000000000000000001}
+    const SUB_VALUES = {b00, b00}
+    const MUL_VALUES = {b00, b00}
+    const DIV_VALUES = {b00, b00}
+    const BM_VALUES = {b00, b00}
+    const AND_VALUES = {b00, b00}
+    const OR_VALUES = {b00, b00}
+    const XOR_VALUES = {b00, b00}
+    const A_VALUES = {b00, b00}
+    const SHL_VALUES = {b00, b00}
+    const SHR_VALUES = {b00, b00}
+    const SRA_VALUES = {b00, b00}
+    const CMPEQ_VALUES = {b00, b00}
+    const CMPLT_VALUES = {b00, b00}
+    const CMPLE_VALUES = {b00, b00}
+    
+    always {        
+        case (alufn){
+            b000000:
+                value = ADD_VALUES[pos]
+            b000001:
+                value = SUB_VALUES[pos]
+            b000010:
+                value = MUL_VALUES[pos]
+            b000011:
+                value = DIV_VALUES[pos]
+            b000100:
+                value = BM_VALUES[pos]
+            b011000:
+                value = AND_VALUES[pos]
+            b011110:
+                value = OR_VALUES[pos]
+            b010110:
+                value = XOR_VALUES[pos]
+            b011010:
+                value = A_VALUES[pos]
+            b100000:
+                value = SHL_VALUES[pos]
+            b100001:
+                value = SHR_VALUES[pos]
+            b100011:
+                value = SRA_VALUES[pos]
+            b110011:
+                value = CMPEQ_VALUES[pos]
+            b110101:
+                value = CMPLT_VALUES[pos]
+            b110111:
+                value = CMPLE_VALUES[pos]
+            default:
+                value = 32x{0}
+        }
     }
 }

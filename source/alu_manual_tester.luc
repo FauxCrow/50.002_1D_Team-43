@@ -10,8 +10,18 @@ module alu_manual_tester#(
     output io_select[4]
 ) {
     
-    //sig rst // reset signal
+    // instatiate ALU and alu auto tester rom
     alu alu
+    alu_tester_rom rom
+    
+    // stores all hardcoded A, B, ALUFN, grouped by position, for each test case
+    const A_VALUE = {c{31x{0}, 1}, 32x{0}}
+    const B_VALUE = {32x{0}, 32x{0}}
+    const ALUFN_VALUE = {b000000, b000000}  
+    const TEST_CASES = 2
+    
+    sig pos
+    sig current_test
     
     enum States {
         STORE,
@@ -20,7 +30,7 @@ module alu_manual_tester#(
         AUTO,
         IDLE
     }
-     
+    
     const CLK_FREQ = $is_sim() ? 1000 : 10000000 // put 1000 only for sim, 10M on hardware
     
     sig counter
@@ -37,22 +47,23 @@ module alu_manual_tester#(
             dff states[$width(States)](#INIT(States.IDLE)) 
         }
     }
-   
+    
     always {
-        //implement alu tester logic here
-        alu.a = 0
-        alu.b = 0
-        alu.alufn = 0
-        io_led = 3x{{8h0}}
-        io_segment = 0
-        io_select = 4hF
+        pos = 0
+        current_test = 0
+        
+        alu.a = 32x{0}
+        alu.b = 32x{0}
+        alu.alufn = b000000
+        rom.alufn = b000000
+        rom.pos = pos
         
         counter = 0 // default value of counter
         
         /*
         reset_cond.in = ~rst_n // input raw inverted reset signal
         rst = reset_cond.out    // conditioned reset
-        */
+        */        
         
         // condition the buttons, then take rising edges only
         io_button_cond.in = io_button
@@ -66,63 +77,94 @@ module alu_manual_tester#(
         case (states.q){
             States.IDLE: 
                 // Default State
-            if (io_button_edge.out[1]){ // Middle Button Press
-            states.d = States.AUTO
+                if (io_button_edge.out[1]){ // Middle Button Press
+                    states.d = States.AUTO
                 }
-            else if (io_button_edge.out[0]){ // Upper Button Press
-            states.d = States.MANUAL
+                else if (io_button_edge.out[0]){ // Upper Button Press
+                    states.d = States.MANUAL
                 }
             
             States.AUTO:
-            // Run automatic test cases
-            // What is the plan to showcase pass/fail of testcases?
-            states.d = States.IDLE // Reverts back to default state once run
+                alu.a = A_VALUE[current_test]
+                alu.b = B_VALUE[current_test]
+                alu.alufn = ALUFN_VALUE[current_test]
+                rom.alufn = ALUFN_VALUE[current_test]
                 
+                // since each function has 4 test cases in the rom, we reset pos to 0 to not exceed this number
+                if (pos > 4){
+                    pos = 0
+                }
+                // set current rom value pos to confirmed pos
+                rom.pos = pos
+                
+                // if the test case expected result is right, we turn on the first led blinker
+                if (alu.out == rom.value){
+                    io_led = {c{8b0},c{8b0}, c{7b0, b1}}
+                }
+                else{
+                    io_led = {c{8b0},c{8b0}, c{6b0, b1, b0}}
+                }
+                
+                // move to next positions
+                pos = pos + 1
+                current_test = current_test + 1
+                
+                if (current_test == TEST_CASES){
+                    states.d = States.IDLE // Reverts back to default state once run
+                }
+                else{
+                    states.d = States.AUTO // Move to the next test case, same state
+                }
+            
+            
             States.MANUAL:
-            if (io_button_edge.out[1]){
-            states.d = States.START
+                if (io_button_edge.out[1]){
+                    states.d = States.START
                 }
-            if (io_button_edge.out[4]){
-            states.d = States.STORE
+                if (io_button_edge.out[4]){
+                    states.d = States.STORE
                 }
-            if (io_button_edge.out[0]){
-            states.d = States.IDLE
+                if (io_button_edge.out[0]){
+                    states.d = States.IDLE
                 }
             
             States.STORE:
-            // Every time the right button is pressed, it will store the bits into A & B until all bits have been stored
-            if (io_button_edge.out[3]){
-                if (counter < 5){
-                    counter = counter + 1
-                    if (counter == 1){
-                        alu.a[15:0] = c{io_dip[1][7:0], io_dip[0][7:0]}
+                // Every time the right button is pressed, it will store the bits into A & B until all bits have been stored
+                if (io_button_edge.out[3]){
+                    if (counter < 5){
+                        counter = counter + 1
+                        if (counter == 1){
+                            alu.a[15:0] = c{io_dip[1][7:0], io_dip[0][7:0]}
                         }
-                    if (counter == 2){
-                        alu.a[31:16] = c{io_dip[1][7:0], io_dip[0][7:0]}
+                        if (counter == 2){
+                            alu.a[31:16] = c{io_dip[1][7:0], io_dip[0][7:0]}
+                        }
+                        if (counter == 3){
+                            alu.b[15:0] = c{io_dip[1][7:0], io_dip[0][7:0]}
+                        }
+                        if (counter == 4){
+                            alu.b[15:0] = c{io_dip[1][7:0], io_dip[0][7:0]}
+                        }
                     }
-                    if (counter == 3){
-                        alu.b[15:0] = c{io_dip[1][7:0], io_dip[0][7:0]}
-                        }
-                    if (counter == 4){
-                        alu.b[15:0] = c{io_dip[1][7:0], io_dip[0][7:0]}
-                            }
+                    else {
+                        counter = 0
+                        states.d = States.MANUAL
+                    }
                 }
-                else {
-                    counter = 0
-                    states.d = States.MANUAL
-                            }
-                }
-                
-            States.START:
-            // Assign bits to ALUFN
-            alu.alufn = io_dip[2][5:0]
-                
-            // Produces a visible outputs on whether a test case passes or fails
-            // How should we implement this?
             
-            states.d = States.MANUAL // Revert back to MANUAL once finished
+            States.START:
+                // Assign bits to ALUFN
+                alu.alufn = io_dip[2][5:0]
+                
+                // Produces a visible outputs on whether a test case passes or fails
+                // How should we implement this?
+                
+                states.d = States.MANUAL // Revert back to MANUAL once finished
         }
         
         // OUTPUT HERE
+        io_led = 3x{{8h0}}
+        io_segment = 0
+        io_select = 4hF
     }
 }
