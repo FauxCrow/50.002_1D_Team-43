@@ -2,27 +2,21 @@ module alu_manual_tester#(
     CLK_FREQ ~ 1000 : CLK_FREQ > 0) 
 (
     input clk,  // clock
-    input rst,  // reset button
+    input rst,  // reset
     input io_button[5],
     input io_dip[3][8],
-    output led[8],
     output io_led[3][8],
     output io_segment[8],
-    output io_select[4]
+    output io_select[4],
+    output led[8]
 ) {
     
-    // instatiate ALU and alu auto tester rom
     alu alu
     alu_tester_rom rom
     
     // stores all hardcoded A, B, ALUFN, grouped by position, for each test case
-    const A_VALUE = {c{31x{0}, 1}, 32x{0}}
-    const B_VALUE = {32x{0}, 32x{0}}
-    const ALUFN_VALUE = {b000000, b000000}  
-    const TEST_CASES = 2
-    
-    sig pos
-    sig current_test
+    const ADDRESS = {b000000, b000001, b000010, b000011}
+    const TEST_CASES = 3
     
     enum States {
         MANUAL,
@@ -30,12 +24,20 @@ module alu_manual_tester#(
         CALCULATE
     }
     
+    const SIZE = 32 
     const CLK_FREQ = $is_sim() ? 1000 : 10000000 // put 1000 only for sim, 10M on hardware
+    const SEVEN_SEG_DIV = $is_sim() ? 3 : 16 // put 6 for sim, 16 on hardware
     
-    sig counter
     //sig slow_clock
     
     .clk(clk) {
+        dff counter_dff[3](#INIT(0))
+        dff current_test_dff[2](#INIT(0))
+        
+        dff manual_A_dff[32](#INIT(0))
+        dff manual_B_dff[32](#INIT(0))
+        dff manual_alufn_dff[6](#INIT(0))
+        
         // The reset conditioner is used to synchronize the reset signal to the FPGA
         // clock. This ensures the entire FPGA comes out of reset at the same time.
         // reset_conditioner reset_cond
@@ -44,114 +46,132 @@ module alu_manual_tester#(
         button_conditioner io_button_cond[5](#CLK_FREQ(5x{{CLK_FREQ}})) 
         
         .rst(rst) {
+            multi_seven_seg seg(#DIV(SEVEN_SEG_DIV)) 
+            
             dff states[$width(States)](#INIT(States.MANUAL)) 
+            dff current_value[SIZE](#INIT(0))
         }
     }
     
+    bin_to_dec decimal_renderer(#DIGITS(4), #LEADING_ZEROS(1))
+    
     always {
-        pos = 0
-        current_test = 0
-        
-        led = b00000000
-        
+        // initial reset
+        led = b00000000  
         alu.a = 32x{0}
         alu.b = 32x{0}
         alu.alufn = b000000
-        rom.alufn = b000000
-        rom.pos = pos
-        
-        counter = 0 // default value of counter       
+        rom.address = ADDRESS[current_test_dff.q]
         
         // condition the buttons, then take rising edges only
         io_button_cond.in = io_button
         io_button_edge.in = io_button_cond.out
         
-        
         // connect dffs
         states.d = states.q
+        current_value.d = current_value.q
+        
+        // number display
+        decimal_renderer.value = current_value.q // convert the binary output to decimal value 
+        seg.values = decimal_renderer.digits // plug the decimal digits into 7seg controller
         
         // STATES
         case (states.q){
             States.MANUAL:
-                if (io_button_edge.out[1]){ // Middle Button Press
+                led = b10000000  
+                
+                // this code sets values of inputs to the alu, based on current count
+                if (counter_dff.q == 0) { // first 16 bits of A
+                    led = b10000001  
+                    manual_A_dff.d[15:0] = c{io_dip[1][7:0], io_dip[0][7:0]} 
+                }
+                if (counter_dff.q == 1) {  // last 16 bits of A
+                    led = b10000010
+                    manual_A_dff.d[31:16] = c{io_dip[1][7:0], io_dip[0][7:0]}  
+                } 
+                if (counter_dff.q == 2) {  // first 16 bits of B
+                    led = b10000100 
+                    manual_B_dff.d[15:0] = c{io_dip[1][7:0], io_dip[0][7:0]}  
+                }
+                if (counter_dff.q == 3) {  // last 16 bits of B
+                    led = b10001000
+                    manual_B_dff.d[31:16] = c{io_dip[1][7:0], io_dip[0][7:0]}  
+                }
+                if (counter_dff.q == 4) {  // alufn
+                    led = b10010000
+                    manual_alufn_dff.d = io_dip[0][5:0] // alufn values
+                }
+                
+                if (io_button_edge.out[1]) { // Middle Button Press
                     states.d = States.AUTO
-                }
-                else if (io_button_edge.out[2]){
-                    // check current stage in manual
-                }
-                
-            States.AUTO:
-                alu.a = A_VALUE[current_test]
-                alu.b = B_VALUE[current_test]
-                alu.alufn = ALUFN_VALUE[current_test]
-                rom.alufn = ALUFN_VALUE[current_test]
-                
-                // since each function has 4 test cases in the rom, we reset pos to 0 to not exceed this number
-                if (pos > 4){
-                    pos = 0
-                }
-                // set current rom value pos to confirmed pos
-                rom.pos = pos
-                
-                // if the test case expected result is right, we turn on the first led blinker
-                if (alu.out == rom.value){
-                    led = 00000001
-                }
-                else{
-                    led = 00000010
-                }
-                
-                // move to next positions
-                pos = pos + 1
-                current_test = current_test + 1
-                
-                if (current_test == TEST_CASES){
-                    states.d = States.MANUAL // Reverts back to default state once run
-                }
-                else{
-                    states.d = States.AUTO // Move to the next test case, same state
-                }
-
-            /*
-            States.STORE:
-                // Every time the right button is pressed, it will store the bits into A & B until all bits have been stored
-                if (io_button_edge.out[3]){
-                    if (counter < 5){
-                        counter = counter + 1
-                        if (counter == 1){
-                            alu.a[15:0] = c{io_dip[1][7:0], io_dip[0][7:0]}
-                        }
-                        if (counter == 2){
-                            alu.a[31:16] = c{io_dip[1][7:0], io_dip[0][7:0]}
-                        }
-                        if (counter == 3){
-                            alu.b[15:0] = c{io_dip[1][7:0], io_dip[0][7:0]}
-                        }
-                        if (counter == 4){
-                            alu.b[15:0] = c{io_dip[1][7:0], io_dip[0][7:0]}
-                        }
+                } 
+                if (io_button_edge.out[0]) { // Up Button pressed
+                    if (counter_dff.q >= 5) {
+                        counter_dff.d = 0  // reset counter
+                        states.d = States.CALCULATE
                     }
-                    else {
-                        counter = 0
+                    counter_dff.d = counter_dff.q + 1
+                }
+            
+            States.AUTO:             
+                led = b01000000  
+                current_value.d = current_test_dff.q
+                
+                decimal_renderer.value = current_value.q // convert the binary output to decimal value 
+                seg.values = decimal_renderer.digits // plug the decimal digits into 7seg controller
+                
+                alu.a = rom.a
+                alu.b = rom.b
+                alu.alufn = rom.alufn
+                
+                // checks if the test case expected result is right
+                if (alu.out == rom.value) {
+                    led = b01100000  // Pass
+                } else {
+                    led = b01000000  // Fail
+                }
+                
+                // If middle button pressed, go back to manual mode
+                if (io_button_edge.out[1]){
+                    current_test_dff.d = 0 
+                    current_value.d = 0
+                    decimal_renderer.value = 0 // convert the binary output to decimal value 
+                    seg.values = decimal_renderer.digits // plug the decimal digits into 7seg controller
+                    states.d = States.MANUAL
+                }
+                // if right button pressed, go to next test case
+                if (io_button_edge.out[4]){
+                    // Reverts back to default state once run
+                    if (current_test_dff.q >= TEST_CASES) {
+                        current_test_dff.d = 0 
+                        current_value.d = 0
+                        decimal_renderer.value = 0 // convert the binary output to decimal value 
+                        seg.values = decimal_renderer.digits // plug the decimal digits into 7seg controller
                         states.d = States.MANUAL
-                    }
+                    } 
+                    
+                    current_test_dff.d = current_test_dff.q + 1
                 }
-            */
             
             States.CALCULATE:
-                // Assign bits to ALUFN
-                alu.alufn = io_dip[2][5:0]
+                led = b00010000  
                 
-                // Produces a visible outputs on whether a test case passes or fails
-                // How should we implement this?
+                alu.a = manual_A_dff.q
+                alu.b = manual_B_dff.q
+                alu.alufn = manual_alufn_dff.q
+                
+                //display alu.out in decimal format
+                decimal_renderer.value = alu.out
+                seg.values = decimal_renderer.digits // plug the decimal digits into 7seg controller
+                
+                // maybe show xvn in leds lor
                 
                 states.d = States.MANUAL // Revert back to MANUAL once finished
         }
         
         // OUTPUT HERE
-        //led = b00000000
-        io_led = 3x{{8h0}}
-        io_segment = 0
-        io_select = 4hF
+        io_led = io_dip
+        io_segment = ~seg.seg
+        io_select = ~seg.sel
     }
 }
