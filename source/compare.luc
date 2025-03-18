@@ -15,18 +15,19 @@ module compare #(
         compare_unit.s1 = alufn[2];
 
         //inputs for mux:
-        // Compare A == B (Equality): Output 0 when ALUFN = 00
+        
+        // Default
         compare_unit.in[0] = 0; 
 
-        // Compare A < B (Less than): z flag indicates result is zero
+        // Compare A == B (Equality): Output Z
         compare_unit.in[1] = z; 
 
         a = n ^ v; 
-
-        // Compare A <= B (Less than or equal): result from XOR of n and v
+        
+        // Compare A < B (Less than): result from XOR of n and v
         compare_unit.in[2] = a;
-
-        // Checking for overflow or zero: result from XOR of n and v or z
+        
+        // Compare A <= B (Less than or equal): result from XOR of n and v or z
         compare_unit.in[3] = a | z;
 
         //output result  
