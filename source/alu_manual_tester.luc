@@ -17,8 +17,8 @@ module alu_manual_tester#(
     // stores all hardcoded A, B, ALUFN, grouped by position, for each test case
     const ADDRESS = {b000000, b000001, b000010, b000011, b000100, b000101, b000110, b000111, b001000, 
         b001001, b001010, b001011, b001100, b001101, b001110, b001111, b010000, b010001, b010010, b010011, 
-        b010100, b010101, b010111}
-    const TEST_CASES = 22
+        b010100, b010101, b010111, b011000, b011001, b011010, b011011, b011100, b011101, b011110, b011111}
+    const TEST_CASES = 30
     
     enum States {
         MANUAL,

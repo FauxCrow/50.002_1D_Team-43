@@ -8,29 +8,36 @@ module alu_tester_rom (
     // implement stored expected values for each test case for each operation
     
     const A_VALUE = {
-        b00000000000000000000000000000001,  // ADD Test 1: A + 0 , adding 0
-        b00000000000000000000000000000000,  // ADD Test 2: 0 + A , adding 0
-        b00000000000000000000000000000101,  // ADD Test 3: 5 + 7 , adding positives
-        b01111111111111111111111111111111,  // ADD Test 4: Boundary overflow, adding maximum numbers
-        b00000000000000000000000000000010,  // SUB Test 5: A - 0 , Subtracting 0
-        b00000000000000000000000000000000,   // SUB Test 6: 0 - A , Subtraction from 0
-        b11111111111111111111111111111111,   // SUB Test 7: Underflow, Subtract larger from smaller
-        b00000000000000000000000000000000,  // SUB Test 8: Boundary values, Subtract maximum positive from 0
-        b00000000000000000000000000000000,  // MUL Test 9: 0 * 0 
-        b00000000000000000000000000000010,  // MUL Test 10: 2 * 1
+        b00000000000000000000000000000001, // ADD Test 1: A + 0 , adding 0
+        b00000000000000000000000000000000, // ADD Test 2: 0 + A , adding 0
+        b00000000000000000000000000000101, // ADD Test 3: 5 + 7 , adding positives
+        b01111111111111111111111111111111, // ADD Test 4: Boundary overflow, adding maximum numbers
+        b00000000000000000000000000000010, // SUB Test 5: A - 0 , Subtracting 0
+        b00000000000000000000000000000000, // SUB Test 6: 0 - A , Subtraction from 0
+        b11111111111111111111111111111111, // SUB Test 7: Underflow, Subtract larger from smaller
+        b00000000000000000000000000000000, // SUB Test 8: Boundary values, Subtract maximum positive from 0
+        b00000000000000000000000000000000, // MUL Test 9: 0 * 0 
+        b00000000000000000000000000000010, // MUL Test 10: 2 * 1
         b00000000000000000000000000000010, // MUL Test 11: 2 * 2 
         b00000000000000000000000000000101, // AND Test 12: 5 & 0
         b00000000000000000000000000000101, // AND Test 13: 5 & 5 
         b00000000000000000000000000000101, // AND Test 14: complement check
         b00000000000000000000000000000101, // OR Test 15: all 0s 
         b00000000000000000000000000000101, // OR Test 16: all 1s
-        b00000000000000000000000000100000, // SHL Test 17: 
-        b10000000000000000000000000000000, // SHL Test 18: 
-        b10000000000000000000000000000000, // SHL Test 19: 
-        b00000000000000000000000000100001, // SHR Test 20: 
-        b00000000000000000000000000100001, // SHR Test 21: 
-        b10000000000000000000000000000001  // SHR Test 22: 
-        
+        b00000000000000000000000000100000, // SHL Test 17: 0 shift
+        b10000000000000000000000000000000, // SHL Test 18: max shift
+        b10000000000000000000000000000000, // SHL Test 19: shift with 1 in MSB
+        b00000000000000000000000000100001, // SHR Test 20: 0 shift
+        b00000000000000000000000000100001, // SHR Test 21: max shift
+        b10000000000000000000000000000001, // SHR Test 22: ensure vacated bits are filled with 0
+        b00000000000000000000000000000101, // XOR Test 23: A XOR 0 
+        b00000000000000000000000000000101, // XOR Test 24: A XOR A 
+        b00000000000000000000000000000111, // CMPEQ Test 25: equal values
+        b00000000000000000000000000000010, // CMPEQ Test 26: unequal values
+        b00000000000000000000000000000010, // CMPLT Test 27: Less Than
+        b00000000000000000000000000000111,  // CMPLT Test 28: Greater Than / Equal
+        b00000000000000000000000000000010, // CMPLE Test 29: Less Than or Equal
+        b00000000000000000000000000000111 // CMPLE Test 30: Greater Than
     }
     
     const B_VALUE = {
@@ -55,8 +62,15 @@ module alu_tester_rom (
         b00000000000000000000000000000001, // SHL Test 19: 
         b00000000000000000000000000000000, // SHR Test 20: 
         b00000000000000000000000000011111, // SHR Test 21: 
-        b00000000000000000000000000000001  // SHR Test 22: 
-        
+        b00000000000000000000000000000001, // SHR Test 22: 
+        b00000000000000000000000000000000, // XOR Test 23:
+        b00000000000000000000000000000101, // XOR Test 24:
+        b00000000000000000000000000000111, // CMPEQ Test 25:
+        b00000000000000000000000000000111, // CMPEQ Test 26:
+        b00000000000000000000000000000111, //CMPLT Test 27
+        b00000000000000000000000000000111,  //CMPLT Test 28
+        b00000000000000000000000000000111, //CMPLT Test 29
+        b00000000000000000000000000000010  //CMPLT Test 30
     }
     
     const ALUFN_VALUE = {
@@ -81,7 +95,15 @@ module alu_tester_rom (
         b100000,
         b100001, // SHR
         b100001,
-        b100001
+        b100001,
+        b010110, // XOR
+        b010110,
+        b110011, //CMPEQ
+        b110011,
+        b110101, //CMPLT
+        b110101,
+        b110111, //CMPLE
+        b110111
     }
     
     const EXPECTED_VALUE = {
@@ -106,7 +128,15 @@ module alu_tester_rom (
         b00000000000000000000000000000000, // SHL Test 19 Result
         b00000000000000000000000000100001, // SHR Test 20 Result
         b00000000000000000000000000000000, // SHR Test 21 Result
-        b01000000000000000000000000000000  // SHR Test 22 Result
+        b01000000000000000000000000000000, // SHR Test 22 Result
+        b00000000000000000000000000000000, // XOR Test 23 Result
+        b00000000000000000000000000000101, // XOR Test 24 Result
+        b00000000000000000000000000000001, // CMPEQ Test 25 Result
+        b00000000000000000000000000000000, // CMPEQ Test 26 Result
+        b00000000000000000000000000000001, // CMPLT Test 27 Result
+        b00000000000000000000000000000000, // CMPLT Test 28 Result
+        b00000000000000000000000000000001, // CMPLE Test 29 Result
+        b00000000000000000000000000000000 // CMPLE Test 30 Result
     }
     
     always {        
@@ -221,6 +251,46 @@ module alu_tester_rom (
                 b = B_VALUE[21]
                 alufn = ALUFN_VALUE[21]
                 value = EXPECTED_VALUE[21]
+            b011000:
+                a = A_VALUE[22]
+                b = B_VALUE[22]
+                alufn = ALUFN_VALUE[22]
+                value = EXPECTED_VALUE[22]
+            b011001:
+                a = A_VALUE[23]
+                b = B_VALUE[23]
+                alufn = ALUFN_VALUE[23]
+                value = EXPECTED_VALUE[23]
+            b011010:
+                a = A_VALUE[24]
+                b = B_VALUE[24]
+                alufn = ALUFN_VALUE[24]
+                value = EXPECTED_VALUE[24]
+            b011011:
+                a = A_VALUE[25]
+                b = B_VALUE[25]
+                alufn = ALUFN_VALUE[25]
+                value = EXPECTED_VALUE[25]
+            b011100:
+                a = A_VALUE[26]
+                b = B_VALUE[26]
+                alufn = ALUFN_VALUE[26]
+                value = EXPECTED_VALUE[26]
+            b011101:
+                a = A_VALUE[27]
+                b = B_VALUE[27]
+                alufn = ALUFN_VALUE[27]
+                value = EXPECTED_VALUE[27]
+            b011110:
+                a = A_VALUE[28]
+                b = B_VALUE[28]
+                alufn = ALUFN_VALUE[28]
+                value = EXPECTED_VALUE[28]
+            b011111:
+                a = A_VALUE[29]
+                b = B_VALUE[29]
+                alufn = ALUFN_VALUE[29]
+                value = EXPECTED_VALUE[29]
             
             default:
                 a = 32x{0}
