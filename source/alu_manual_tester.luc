@@ -32,14 +32,7 @@ module alu_manual_tester#(
     
     //sig slow_clock
     
-    .clk(clk) {
-        dff counter_dff[3](#INIT(0))
-        dff current_test_dff[5](#INIT(0))
-        
-        dff manual_A_dff[32](#INIT(0))
-        dff manual_B_dff[32](#INIT(0))
-        dff manual_alufn_dff[6](#INIT(0))
-        
+    .clk(clk) {       
         // The reset conditioner is used to synchronize the reset signal to the FPGA
         // clock. This ensures the entire FPGA comes out of reset at the same time.
         // reset_conditioner reset_cond
@@ -52,6 +45,14 @@ module alu_manual_tester#(
             
             dff states[$width(States)](#INIT(States.MANUAL)) 
             dff current_value[SIZE](#INIT(0))
+            
+            dff counter_dff[3](#INIT(0))
+            dff current_test_dff[5](#INIT(0))
+            
+            dff manual_A_dff[32](#INIT(32x{0}))
+            dff manual_B_dff[32](#INIT(32x{0}))
+            dff manual_alufn_dff[6](#INIT(6x{0}))
+            dff regOUT[32](#INIT(32x{0})) 
         }
     }
     
@@ -72,6 +73,10 @@ module alu_manual_tester#(
         // connect dffs
         states.d = states.q
         current_value.d = current_value.q
+        manual_A_dff.d = manual_A_dff.q
+        manual_B_dff.d = manual_B_dff.q
+        manual_alufn_dff.d = manual_alufn_dff.q
+        regOUT.d = regOUT.q
         
         // number display
         decimal_renderer.value = current_value.q // convert the binary output to decimal value 
@@ -80,24 +85,23 @@ module alu_manual_tester#(
         // STATES
         case (states.q){
             States.MANUAL:
-                led = b10000000  
-                
+                led = b10000000
                 // this code sets values of inputs to the alu, based on current count
                 if (counter_dff.q == 0) { // first 16 bits of A
                     led = b10000001  
-                    manual_A_dff.d[15:0] = c{io_dip[1][7:0], io_dip[0][7:0]} 
+                    manual_A_dff.d[15:0] = c{io_dip[1], io_dip[0]}
                 }
                 if (counter_dff.q == 1) {  // last 16 bits of A
                     led = b10000010
-                    manual_A_dff.d[31:16] = c{io_dip[1][7:0], io_dip[0][7:0]}  
+                    manual_A_dff.d[31:16] = c{io_dip[1], io_dip[0]}
                 } 
                 if (counter_dff.q == 2) {  // first 16 bits of B
                     led = b10000100 
-                    manual_B_dff.d[15:0] = c{io_dip[1][7:0], io_dip[0][7:0]}  
+                    manual_B_dff.d[15:0] = c{io_dip[1], io_dip[0]}  
                 }
                 if (counter_dff.q == 3) {  // last 16 bits of B
                     led = b10001000
-                    manual_B_dff.d[31:16] = c{io_dip[1][7:0], io_dip[0][7:0]}  
+                    manual_B_dff.d[31:16] = c{io_dip[1], io_dip[0]}
                 }
                 if (counter_dff.q == 4) {  // alufn
                     led = b10010000
@@ -110,7 +114,7 @@ module alu_manual_tester#(
                 if (io_button_edge.out[0]) { // Up Button pressed
                     counter_dff.d = counter_dff.q + 1
                     
-                    if (counter_dff.q >= 5) {
+                    if (counter_dff.q >= 4) {
                         counter_dff.d = 0  // reset counter
                         states.d = States.CALCULATE
                     }
@@ -133,6 +137,7 @@ module alu_manual_tester#(
                 
                 alu.b = rom.b
                 alu.alufn = rom.alufn
+                regOUT.d = alu.out
                 
                 // checks if the test case expected result is right
                 if (alu.out == rom.value) {
@@ -169,6 +174,7 @@ module alu_manual_tester#(
                 alu.a = manual_A_dff.q
                 alu.b = manual_B_dff.q
                 alu.alufn = manual_alufn_dff.q
+                regOUT.d = alu.out
                 
                 //display alu.out in decimal format
                 decimal_renderer.value = alu.out
@@ -180,7 +186,9 @@ module alu_manual_tester#(
         }
         
         // OUTPUT HERE
-        io_led = io_dip
+        //io_led = io_dip
+        io_led = c{{regOUT.q[23:16]}, {regOUT.q[15:8]}, {regOUT.q[7:0]}}
+        //led = regOUT.q[31:24]
         io_segment = ~seg.seg
         io_select = ~seg.sel
     }

@@ -20,12 +20,12 @@ module alu (
     bm bitmask
     divider divider
 
-    mux_2 alu_select_2 // used for add / mul
-    mux_4 alu_select_4 // used for mux_2 select, compare, bool, shift
+    mux_2_32bit alu_select_2(#SIZE(SIZE)) // used for add / mul
+    mux_4_32bit alu_select_4(#SIZE(SIZE)) // used for mux_2 select, compare, bool, shift
     
     always {
         // setup selector for mux_2
-        alu_select_2.s0 = SIZEx{alufn[1]}
+        alu_select_2.s0 = alufn[1]
         
         // adder inputs
         adder.a = a
@@ -49,6 +49,7 @@ module alu (
         // add all selections add and multiply in mux_2 inputs based on operation table
         alu_select_2.in[0] = adder.out
         alu_select_2.in[1] = multiplier.mul
+        //alu_select_2.in = c{{adder.out},{multiplier.mul}}
         
         // setup selector for mux_4
         alu_select_4.s1 = alufn[5]
@@ -61,7 +62,7 @@ module alu (
         
         // shifter inputs
         shifter.a = a
-        shifter.b = b
+        shifter.b = b[4:0]
         shifter.alufn = alufn
         
         // compute 1 bit inputs
@@ -70,7 +71,7 @@ module alu (
         compare.n = n
         compare.alufn = alufn
         
-        // add all selections mux_2, boolean, shifter, compare as mux_4 in
+        // add all input mux_2, boolean, shifter, compare as mux_4 in
         alu_select_4.in[0] = alu_select_2.out
         alu_select_4.in[1] = boolean.bool
         alu_select_4.in[2] = shifter.shift
@@ -82,7 +83,7 @@ module alu (
         // bit masking inputs
         bitmask.a = a
         bitmask.b = b
-        bitmask.alufn = alufn
+        bitmask.alufn = alufn[1:0]
 
         // division inputs
         divider.a = a
