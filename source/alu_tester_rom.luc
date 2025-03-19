@@ -23,30 +23,42 @@ module alu_tester_rom (
         b00000000000000000000000000000101, // AND Test 13: 5 & 5 
         b00000000000000000000000000000101, // AND Test 14: complement check
         b00000000000000000000000000000101, // OR Test 15: all 0s 
-        b00000000000000000000000000000101 // OR Test 16: all 1s
+        b00000000000000000000000000000101, // OR Test 16: all 1s
+        b00000000000000000000000000100000, // SHL Test 17: 
+        b10000000000000000000000000000000, // SHL Test 18: 
+        b10000000000000000000000000000000, // SHL Test 19: 
+        b00000000000000000000000000100001, // SHR Test 20: 
+        b00000000000000000000000000100001, // SHR Test 21: 
+        b10000000000000000000000000000001  // SHR Test 22: 
         
-    };
-
+    }
+    
     const B_VALUE = {
-        b00000000000000000000000000000000,  // ADD Test 1
-        b00000000000000000000000000000001,  // ADD Test 2
-        b00000000000000000000000000000111,  // ADD Test 3
-        b01111111111111111111111111111111,  // ADD Test 4
-        b00000000000000000000000000000000,  // SUB Test 5
-        b00000000000000000000000000000010,   // SUB Test 6
-        b01111111111111111111111111111111,   // SUB Test 7
-        b01111111111111111111111111111111,    // SUB Test 8
-        b00000000000000000000000000000000,  // MUL Test 9
+        b00000000000000000000000000000000, // ADD Test 1
+        b00000000000000000000000000000001, // ADD Test 2
+        b00000000000000000000000000000111, // ADD Test 3
+        b01111111111111111111111111111111, // ADD Test 4
+        b00000000000000000000000000000000, // SUB Test 5
+        b00000000000000000000000000000010, // SUB Test 6
+        b01111111111111111111111111111111, // SUB Test 7
+        b01111111111111111111111111111111, // SUB Test 8
+        b00000000000000000000000000000000, // MUL Test 9
         b00000000000000000000000000000001, // MUL Test 10
         b00000000000000000000000000000010, // MUL Test 11
         b00000000000000000000000000000000, // AND Test 12
         b00000000000000000000000000000101, // AND Test 13 
         b11111111111111111111111111111010, // AND Test 14
         b00000000000000000000000000000000, // OR Test 15
-        b11111111111111111111111111111111 // OR Test 16 
+        b11111111111111111111111111111111, // OR Test 16 
+        b00000000000000000000000000000000, // SHL Test 17: 
+        b00000000000000000000000000011111, // SHL Test 18: 
+        b00000000000000000000000000000001, // SHL Test 19: 
+        b00000000000000000000000000000000, // SHR Test 20: 
+        b00000000000000000000000000011111, // SHR Test 21: 
+        b00000000000000000000000000000001  // SHR Test 22: 
         
-    };
-
+    }
+    
     const ALUFN_VALUE = {
         b000000,  // ADD
         b000000,  
@@ -59,13 +71,19 @@ module alu_tester_rom (
         b000010, //  MUL
         b000010,
         b000010,
-        b011000, //AND
+        b011000, // AND
         b011000, 
         b011000,
+        b011110, // OR
         b011110,
-        b011110
-    };
-
+        b100000, // SHL
+        b100000,
+        b100000,
+        b100001, // SHR
+        b100001,
+        b100001
+    }
+    
     const EXPECTED_VALUE = {
         b00000000000000000000000000000001,  // ADD Test 1 Result
         b00000000000000000000000000000001,  // ADD Test 2 Result
@@ -82,8 +100,14 @@ module alu_tester_rom (
         b00000000000000000000000000000101, // AND Test 13 Result
         b00000000000000000000000000000000, // AND Test 14 Result
         b00000000000000000000000000000101, // OR Test 15 Result
-        b11111111111111111111111111111111 // OR Test 16 Result
-    };
+        b11111111111111111111111111111111, // OR Test 16 Result
+        b00000000000000000000000000100000, // SHL Test 17 Result
+        b00000000000000000000000000000001, // SHL Test 18 Result
+        b00000000000000000000000000000000, // SHL Test 19 Result
+        b00000000000000000000000000100001, // SHR Test 20 Result
+        b00000000000000000000000000000000, // SHR Test 21 Result
+        b01000000000000000000000000000000  // SHR Test 22 Result
+    }
     
     always {        
         case (address){
@@ -107,6 +131,96 @@ module alu_tester_rom (
                 b = B_VALUE[3]
                 alufn = ALUFN_VALUE[3]
                 value = EXPECTED_VALUE[3]
+            b000100:
+                a = A_VALUE[4]
+                b = B_VALUE[4]
+                alufn = ALUFN_VALUE[4]
+                value = EXPECTED_VALUE[4]
+            b0000101:
+                a = A_VALUE[5]
+                b = B_VALUE[5]
+                alufn = ALUFN_VALUE[5]
+                value = EXPECTED_VALUE[5]
+            b000111:
+                a = A_VALUE[6]
+                b = B_VALUE[6]
+                alufn = ALUFN_VALUE[6]
+                value = EXPECTED_VALUE[6]
+            b001000:
+                a = A_VALUE[7]
+                b = B_VALUE[7]
+                alufn = ALUFN_VALUE[7]
+                value = EXPECTED_VALUE[7]
+            b001001:
+                a = A_VALUE[8]
+                b = B_VALUE[8]
+                alufn = ALUFN_VALUE[8]
+                value = EXPECTED_VALUE[8]
+            b001010:
+                a = A_VALUE[9]
+                b = B_VALUE[9]
+                alufn = ALUFN_VALUE[9]
+                value = EXPECTED_VALUE[9]
+            b001011:
+                a = A_VALUE[10]
+                b = B_VALUE[10]
+                alufn = ALUFN_VALUE[10]
+                value = EXPECTED_VALUE[10]
+            b001100:
+                a = A_VALUE[11]
+                b = B_VALUE[11]
+                alufn = ALUFN_VALUE[11]
+                value = EXPECTED_VALUE[11]
+            b001101:
+                a = A_VALUE[12]
+                b = B_VALUE[12]
+                alufn = ALUFN_VALUE[12]
+                value = EXPECTED_VALUE[12]
+            b001110:
+                a = A_VALUE[13]
+                b = B_VALUE[13]
+                alufn = ALUFN_VALUE[13]
+                value = EXPECTED_VALUE[13]
+            b001111:
+                a = A_VALUE[14]
+                b = B_VALUE[14]
+                alufn = ALUFN_VALUE[14]
+                value = EXPECTED_VALUE[14]
+            b010000:
+                a = A_VALUE[15]
+                b = B_VALUE[15]
+                alufn = ALUFN_VALUE[15]
+                value = EXPECTED_VALUE[15]
+            b010001:
+                a = A_VALUE[16]
+                b = B_VALUE[16]
+                alufn = ALUFN_VALUE[16]
+                value = EXPECTED_VALUE[16]
+            b010010:
+                a = A_VALUE[17]
+                b = B_VALUE[17]
+                alufn = ALUFN_VALUE[17]
+                value = EXPECTED_VALUE[17]
+            b010011:
+                a = A_VALUE[18]
+                b = B_VALUE[18]
+                alufn = ALUFN_VALUE[18]
+                value = EXPECTED_VALUE[18]
+            b010100:
+                a = A_VALUE[19]
+                b = B_VALUE[19]
+                alufn = ALUFN_VALUE[19]
+                value = EXPECTED_VALUE[19]
+            b010101:
+                a = A_VALUE[20]
+                b = B_VALUE[20]
+                alufn = ALUFN_VALUE[20]
+                value = EXPECTED_VALUE[20]
+            b010111:
+                a = A_VALUE[21]
+                b = B_VALUE[21]
+                alufn = ALUFN_VALUE[21]
+                value = EXPECTED_VALUE[21]
             
             default:
                 a = 32x{0}

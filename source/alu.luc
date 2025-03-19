@@ -74,7 +74,7 @@ module alu (
         alu_select_4.in[0] = alu_select_2.out
         alu_select_4.in[1] = boolean.bool
         alu_select_4.in[2] = shifter.shift
-        alu_select_4.in[3] = c{31b0, compare.cmp}
+        alu_select_4.in[3] = c{31x{b0}, compare.cmp}
 
         // set out based on output of alu_select
         out = alu_select_4.out   
@@ -95,11 +95,5 @@ module alu (
         else if (alufn == b000100){
             out = bitmask.masked
         } 
-        
-        // to be removed later, just for reference now
-        //alu_output = adder.out
-        //alu_output = c{31x{b0}, compare.cmp}
-        //alu_output = boolean.bool
-        //alu_output = shifter.shift
     }
 }

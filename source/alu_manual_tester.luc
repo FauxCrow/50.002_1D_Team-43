@@ -15,8 +15,10 @@ module alu_manual_tester#(
     alu_tester_rom rom
     
     // stores all hardcoded A, B, ALUFN, grouped by position, for each test case
-    const ADDRESS = {b000000, b000001, b000010, b000011}
-    const TEST_CASES = 16
+    const ADDRESS = {b000000, b000001, b000010, b000011, b000100, b000101, b000110, b000111, b001000, 
+        b001001, b001010, b001011, b001100, b001101, b001110, b001111, b010000, b010001, b010010, b010011, 
+        b010100, b010101, b010111}
+    const TEST_CASES = 22
     
     enum States {
         MANUAL,
@@ -32,7 +34,7 @@ module alu_manual_tester#(
     
     .clk(clk) {
         dff counter_dff[3](#INIT(0))
-        dff current_test_dff[2](#INIT(0))
+        dff current_test_dff[5](#INIT(0))
         
         dff manual_A_dff[32](#INIT(0))
         dff manual_B_dff[32](#INIT(0))
@@ -55,7 +57,7 @@ module alu_manual_tester#(
     
     bin_to_dec decimal_renderer(#DIGITS(4), #LEADING_ZEROS(1))
     
-    always {
+    always {        
         // initial reset
         led = b00000000  
         alu.a = 32x{0}
@@ -106,11 +108,12 @@ module alu_manual_tester#(
                     states.d = States.AUTO
                 } 
                 if (io_button_edge.out[0]) { // Up Button pressed
+                    counter_dff.d = counter_dff.q + 1
+                    
                     if (counter_dff.q >= 5) {
                         counter_dff.d = 0  // reset counter
                         states.d = States.CALCULATE
                     }
-                    counter_dff.d = counter_dff.q + 1
                 }
             
             States.AUTO:             
@@ -120,7 +123,14 @@ module alu_manual_tester#(
                 decimal_renderer.value = current_value.q // convert the binary output to decimal value 
                 seg.values = decimal_renderer.digits // plug the decimal digits into 7seg controller
                 
-                alu.a = rom.a
+                // error case: flip LSB using io_dip[2][0] on to simulate error case
+                if (io_dip[2][0] == 1){
+                    alu.a = c{rom.a[31:1], ~rom.a[0]}
+                }
+                else{
+                    alu.a = rom.a
+                }
+                
                 alu.b = rom.b
                 alu.alufn = rom.alufn
                 
@@ -141,6 +151,8 @@ module alu_manual_tester#(
                 }
                 // if right button pressed, go to next test case
                 if (io_button_edge.out[4]){
+                    current_test_dff.d = current_test_dff.q + 1
+                    
                     // Reverts back to default state once run
                     if (current_test_dff.q >= TEST_CASES) {
                         current_test_dff.d = 0 
@@ -149,8 +161,6 @@ module alu_manual_tester#(
                         seg.values = decimal_renderer.digits // plug the decimal digits into 7seg controller
                         states.d = States.MANUAL
                     } 
-                    
-                    current_test_dff.d = current_test_dff.q + 1
                 }
             
             States.CALCULATE:
@@ -164,9 +174,9 @@ module alu_manual_tester#(
                 decimal_renderer.value = alu.out
                 seg.values = decimal_renderer.digits // plug the decimal digits into 7seg controller
                 
-                // maybe show xvn in leds lor
-                
-                states.d = States.MANUAL // Revert back to MANUAL once finished
+                if (io_button_edge.out[0]) { // Up Button pressed
+                    states.d = States.MANUAL // Revert back to MANUAL once finished
+                }
         }
         
         // OUTPUT HERE
