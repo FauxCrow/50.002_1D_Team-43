@@ -37,7 +37,11 @@ module alu_tester_rom (
         b00000000000000000000000000000010, // CMPLT Test 27: Less Than
         b00000000000000000000000000000111,  // CMPLT Test 28: Greater Than / Equal
         b00000000000000000000000000000010, // CMPLE Test 29: Less Than or Equal
-        b00000000000000000000000000000111 // CMPLE Test 30: Greater Than
+        b00000000000000000000000000000111, // CMPLE Test 30: Greater Than
+        b00000000000000000000000000000111, //SRA
+        b11000000000000000000000000000010,
+        b00000000000000000000000000000010,
+        b11111111111111111111111111111111
     }
     
     const B_VALUE = {
@@ -70,7 +74,13 @@ module alu_tester_rom (
         b00000000000000000000000000000111, //CMPLT Test 27
         b00000000000000000000000000000111,  //CMPLT Test 28
         b00000000000000000000000000000111, //CMPLT Test 29
-        b00000000000000000000000000000010  //CMPLT Test 30
+        b00000000000000000000000000000010,  //CMPLT Test 30
+        b00000000000000000000000000000111, //SRA
+        b11000000000000000000000000000010,
+        b00000000000000000000000000000111,
+        b00000000000000000000000000000000 
+
+
     }
     
     const ALUFN_VALUE = {
@@ -103,7 +113,11 @@ module alu_tester_rom (
         b110101, //CMPLT
         b110101,
         b110111, //CMPLE
-        b110111
+        b110111,
+        b100011, //SRA
+        b100011,
+        b100011,
+        b100011
     }
     
     const EXPECTED_VALUE = {
@@ -136,7 +150,11 @@ module alu_tester_rom (
         b00000000000000000000000000000001, // CMPLT Test 27 Result
         b00000000000000000000000000000000, // CMPLT Test 28 Result
         b00000000000000000000000000000001, // CMPLE Test 29 Result
-        b00000000000000000000000000000000 // CMPLE Test 30 Result
+        b00000000000000000000000000000000, // CMPLE Test 30 Result
+        b00000000000000000000000000000001, //SRA
+        b00000000000000000000000000000001,
+        b00000000000000000000000000000000,
+        b00000000000000000000000000000000
     }
     
     always {        
@@ -291,6 +309,26 @@ module alu_tester_rom (
                 b = B_VALUE[29]
                 alufn = ALUFN_VALUE[29]
                 value = EXPECTED_VALUE[29]
+            b111110:
+                a = A_VALUE[30]
+                b = B_VALUE[30]
+                alufn = ALUFN_VALUE[30]
+                value = EXPECTED_VALUE[30]
+            b111111:
+                a = A_VALUE[31]
+                b = B_VALUE[31]
+                alufn = ALUFN_VALUE[31]
+                value = EXPECTED_VALUE[31]
+            b1000000:
+                a = A_VALUE[32]
+                b = B_VALUE[32]
+                alufn = ALUFN_VALUE[32]
+                value = EXPECTED_VALUE[32]
+            b1000001:
+                a = A_VALUE[33]
+                b = B_VALUE[33]
+                alufn = ALUFN_VALUE[33]
+                value = EXPECTED_VALUE[33]
             
             default:
                 a = 32x{0}
