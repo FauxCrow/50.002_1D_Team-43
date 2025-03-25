@@ -110,12 +110,6 @@
             {
                 "file": {
                     "type": "DiskFile",
-                    "path": "source/x_bit_right_arith_shifter.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
                     "path": "source/x_bit_left_shifter.luc"
                 }
             },

@@ -1,9 +1,10 @@
 module x_bit_right_shifter #(
-    SIZE = 31 : SIZE > 0,
+    SIZE = 32 : SIZE > 0,
     SHIFT = 8 : SHIFT > -1 & SHIFT < SIZE
 )(
     input a[SIZE],
     input do_shift,
+    input pad,
     output out[SIZE]
 ) {
     mux_2 shift_unit[SIZE]
@@ -13,10 +14,11 @@ module x_bit_right_shifter #(
         shift_unit.s0 = SIZEx{do_shift}
         
         //remaining pattern (fill vacated MSBs with zeros)
-        shifted_pattern = c{SHIFTx{0}, a[SIZE-1:SHIFT]}  
+        shifted_pattern = c{SHIFTx{pad}, a[SIZE-1:SHIFT]}  
         
         repeat (i, SIZE){
-            shift_unit.in[i] = shifted_pattern[i]
+            shift_unit.in[i][0] = a[i]
+            shift_unit.in[i][1] = shifted_pattern[i]
         }
         
         out = shift_unit.out

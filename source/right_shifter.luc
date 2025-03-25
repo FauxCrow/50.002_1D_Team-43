@@ -19,6 +19,13 @@ module right_shifter #(
         right_shift2.do_shift = b[1]
         right_shift1.do_shift = b[0]
         
+        //set pad
+        right_shift16.pad = 0
+        right_shift8.pad = 0
+        right_shift4.pad = 0
+        right_shift2.pad = 0
+        right_shift1.pad = 0
+        
         //connect in cascade manner, such as:
         right_shift16.a = a;                //First stage takes the original input
         right_shift8.a = right_shift16.out; //second stage takes first stage output

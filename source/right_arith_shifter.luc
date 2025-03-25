@@ -5,11 +5,11 @@ module right_arith_shifter #(
     input b[5],
     output shr[SIZE]
 ) {
-    x_bit_right_arith_shifter right_arith_shift_16(#SHIFT(16))
-    x_bit_right_arith_shifter right_arith_shift_8(#SHIFT(8))
-    x_bit_right_arith_shifter right_arith_shift_4(#SHIFT(4))
-    x_bit_right_arith_shifter right_arith_shift_2(#SHIFT(2))
-    x_bit_right_arith_shifter right_arith_shift_1(#SHIFT(1))
+    x_bit_right_shifter right_arith_shift_16(#SHIFT(16))
+    x_bit_right_shifter right_arith_shift_8(#SHIFT(8))
+    x_bit_right_shifter right_arith_shift_4(#SHIFT(4))
+    x_bit_right_shifter right_arith_shift_2(#SHIFT(2))
+    x_bit_right_shifter right_arith_shift_1(#SHIFT(1))
     
     always {
         // Setup s0 input
@@ -18,6 +18,13 @@ module right_arith_shifter #(
         right_arith_shift_4.do_shift = b[2]
         right_arith_shift_2.do_shift = b[1]
         right_arith_shift_1.do_shift = b[0]
+        
+        // set pad
+        right_arith_shift_16.pad = a[31]
+        right_arith_shift_8.pad = a[31]
+        right_arith_shift_4.pad = a[31]
+        right_arith_shift_2.pad = a[31]
+        right_arith_shift_1.pad = a[31]
         
         // pass down output through cascading shifts
         right_arith_shift_16.a = a[31:0]

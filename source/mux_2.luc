@@ -4,6 +4,7 @@ module mux_2 (
     // it will affect how you utilise this mux
     output out
 ) {
+    
     always {
         case (s0) {
             0: out = in[0]

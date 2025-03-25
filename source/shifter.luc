@@ -6,7 +6,7 @@ module shifter #(
     input alufn[6],
     output shift[32]
 ) {
-    mux_4 shifter_unit
+    mux_4_32bit shifter_unit(#SIZE(SIZE))
     
     left_shifter left_shifter
     right_arith_shifter right_arith_shifter
