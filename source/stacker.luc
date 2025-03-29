@@ -1,0 +1,195 @@
+module stacker #(
+    CLK_FREQ ~ 1000 : CLK_FREQ > 0
+) (
+    input clk,  // clock
+    input rst,  // reset
+    input io_button[5],
+    input io_dip[3][8],
+    output io_led[3][8],
+    output io_segment[8],
+    output io_select[4],
+    output led[8]
+/*
+    input usb_rx,           // USB->Serial input
+    output usb_tx           // USB->Serial output
+*/    
+) {
+    alu alu
+    
+    enum States {
+        IDLE,
+        INITIALISE, 
+        SHIFT,
+        CHECKSHIFT,
+        RIGHTSHIFT,
+        LEFTSHIFT,
+        STOP
+    }
+    
+    const SIZE = 32 
+    const CLK_FREQ = $is_sim() ? 1000 : 10000000 // put 1000 only for sim, 10M on hardware
+    // const SEVEN_SEG_DIV = $is_sim() ? 3 : 16 // put 6 for sim, 16 on hardware
+    const ONE_SHIFT = b00000000000000000000000000000001
+    
+    .clk(clk) {       
+        // The reset conditioner is used to synchronize the reset signal to the FPGA
+        // clock. This ensures the entire FPGA comes out of reset at the same time.
+        // reset_conditioner reset_cond
+        
+        // Reset button
+        edge_detector reset_btn (#RISE(1), #FALL(0))
+        button_conditioner btn_cond_reset (#CLK_FREQ(CLK_FREQ))
+        
+        // Player 1 button
+        edge_detector edge_dt_btn_p1 (#RISE(1), #FALL(0))
+        button_conditioner btn_cond_p1(#CLK_FREQ(CLK_FREQ))
+        
+        // Player 2 button
+        //edge_detector edge_dt_btn_p2(#RISE(1), #FALL(0))
+        //button_conditioner btn_cond_p2(#CLK_FREQ(CLK_FREQ))
+        
+        .rst(rst) {
+            /*
+            uart_rx rx(#BAUD(1_000_000), #CLK_FREQ(100_000_000))
+            uart_tx tx(#BAUD(1_000_000), #CLK_FREQ(100_000_000))
+            */            
+            
+            //fsm states
+            dff states[$width(States)](#INIT(States.IDLE)) 
+            
+            //dff p1_level[5](#INIT(0))  // current level of matrix
+            //dff p1_blocks[3](#INIT(0)) // stores no of lights on
+            dff p1_row[8](#INIT(0))    // store current level of bitmasks
+            
+            dff p1_direction[1](#INIT(0)) // stores direction of current shift
+            dff p1_input[1](#INIT(0))
+        }
+    }
+    
+    always {
+        // input for now
+        led = b00000000
+        io_led = c{{8x{0}}, {8x{0}}, {8x{0}}}
+        
+        alu.a = SIZEx{0}
+        alu.b = SIZEx{0}
+        alu.alufn = b000000
+        
+        // condition the buttons, then take rising edges only
+        // Reset button
+        btn_cond_reset.in = io_button[2] //to reduce the bouncing effects of your button, bottom
+        reset_btn.in = btn_cond_reset.out //get the edge of button press
+        
+        // P1 button
+        btn_cond_p1.in = io_button[1] //to reduce the bouncing effects of your button 
+        edge_dt_btn_p1.in = btn_cond_p1.out //get the edge of button press
+        
+        // connect dffs
+        states.d = states.q
+        p1_row.d = p1_row.q
+        p1_direction.d = p1_direction.q
+        p1_input.d = p1_input.q
+        
+        //regOUT.d = regOUT.q // test FPGA output
+        
+        //UART stuff
+        /*
+        rx.rx = usb_rx          // connect rx input
+        usb_tx = tx.tx          // connect tx output
+        
+        tx.new_data = p1_row.q         // no new data by default
+        tx.data = 8bx           // don't care when new_data is 0
+        tx.block = 0            // no flow control, do not block
+        */        
+        
+        // STATES
+        case (states.q){
+            States.IDLE:
+                led = b10000000 // test state
+                
+                // if start button pressed, start game
+                if (reset_btn.out) { // Middle Button Press
+                    states.d = States.INITIALISE
+                } 
+            
+            States.INITIALISE:
+                led = b01000000 // test state
+                
+                // to do: set level as 2, set first row lights
+                
+                // setup game level values
+                p1_row.d = b00010000    // initial level spawn
+                p1_direction.d = b0 // initial direction left
+                
+                states.d = States.LEFTSHIFT
+            
+            States.RIGHTSHIFT:
+                led = b00100010 // test state
+                
+                // set alu inputs
+                alu.a = c{24x{0}, p1_row.q}
+                alu.b = ONE_SHIFT
+                alu.alufn = b100001 // right shift
+                
+                p1_row.d = alu.out[7:0]
+                
+                states.d = States.CHECKSHIFT
+            
+            States.LEFTSHIFT:
+                led = b00100001 // test state
+                
+                // set alu inputs
+                alu.a = c{24x{0}, p1_row.q}
+                alu.b = ONE_SHIFT
+                alu.alufn = b100000 // left shift
+                
+                p1_row.d = alu.out[7:0]
+                
+                states.d = States.CHECKSHIFT
+            
+            States.CHECKSHIFT:
+                led = b00010000 // test state
+                
+                if (edge_dt_btn_p1.out) { // Middle Button Press
+                    states.d = States.STOP
+                } 
+                
+                if (p1_direction.q == b0){
+                    // check if reached the end of left shift              
+                    if (p1_row.q == b10000000){
+                        p1_direction.d = b1
+                        states.d = States.RIGHTSHIFT
+                    }
+                    else{
+                        states.d = States.LEFTSHIFT
+                    }
+                    
+                }
+                
+                if (p1_direction.q == b1){
+                    // check if reached the end of right shift
+                    if (p1_row.q == b00000001){
+                        p1_direction.d = b0
+                        states.d = States.LEFTSHIFT
+                    }
+                    else{
+                        states.d = States.RIGHTSHIFT
+                    }
+                }
+            
+            States.STOP:
+                led = b00001000 // test state
+                
+                // test btn
+                if (edge_dt_btn_p1.out) { // Middle Button Press
+                    states.d = States.IDLE
+                } 
+        }
+        
+        // OUTPUT HERE
+        //io_led = io_dip
+        io_led = c{{alu.out[7:0]}, {8x{0}}, {8x{0}}}
+        io_segment = 0
+        io_select = 0
+    }
+}

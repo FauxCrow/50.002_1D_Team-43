@@ -170,18 +170,6 @@
             {
                 "file": {
                     "type": "Component",
-                    "path": "Miscellaneous/counter.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "Component",
-                    "path": "Miscellaneous/decoder.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "Component",
                     "path": "Miscellaneous/bin_to_dec.luc"
                 }
             },
@@ -195,6 +183,24 @@
                 "file": {
                     "type": "DiskFile",
                     "path": "source/mux_4_32bit.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/stacker.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "Component",
+                    "path": "Miscellaneous/counter.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "Component",
+                    "path": "Miscellaneous/decoder.luc"
                 }
             }
         ],
