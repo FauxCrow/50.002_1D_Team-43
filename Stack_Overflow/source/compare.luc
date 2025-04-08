@@ -1,0 +1,37 @@
+module compare #(
+    SIZE = 1
+)(
+    input z,
+    input v,
+    input n,
+    input alufn[6],
+    output out
+) {
+    mux_4 compare_unit(#SIZE(1)) //declare 4 to 1 multiplexer (mux_4.luc file)
+    sig a; //temp variable to store result of xor later 
+    
+    always {
+        compare_unit.s0 = alufn[1];
+        compare_unit.s1 = alufn[2];
+        
+        // Default
+        compare_unit.in[0] = 0; 
+
+        // Compare A == B (Equality): Output Z
+        compare_unit.in[1] = z; 
+
+        a = n ^ v; 
+        
+        // Compare A < B (Less than): result from XOR of n and v
+        compare_unit.in[2] = a;
+        
+        // Compare A <= B (Less than or equal): result from XOR of n and v or z
+        compare_unit.in[3] = a | z;
+
+        //output result  
+        out = compare_unit.out; 
+        
+    }
+}
+
+

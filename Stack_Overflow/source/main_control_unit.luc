@@ -1,0 +1,71 @@
+module main_control_unit (
+    input clk,  // clock
+    input rst,  // reset
+    input decrease_timer,
+    input regfile_datain[16], //direct reading of regfile data from read_address_b
+    
+    input p1_button,
+    //input p2_button,
+    
+    output alufn[6],
+    output asel[3],
+    output bsel[3],
+    output alu_out_sel[2],
+    output regfile_write_address[4],
+    output regfile_read_address_a[4],
+    output regfile_read_address_b[4],
+    output we_regfile,
+    output decimal_counter_increase,
+    output decimal_counter_rst,
+    output debug[4]
+) {
+    
+    enum States {
+        IDLE
+    }
+    
+    .clk(clk){
+        .rst(rst){
+            dff game_fsm[$width(States)](#INIT(States.IDLE)) 
+        }
+    }
+    
+    always {
+        
+        // standard setting unless otherwise overwritten by each case 
+        alufn = 0
+        asel = 0 
+        bsel = 0
+        we_regfile = 0
+        regfile_write_address = 1111
+        regfile_read_address_a = 0000
+        regfile_read_address_b = 0000
+        alu_out_sel = 0
+        
+        debug = b0000
+        
+        decimal_counter_increase = 0
+        decimal_counter_rst = 0
+        
+        // connect dffs
+        game_fsm.d = game_fsm.q
+        
+        if (rst){
+            game_fsm.d = States.IDLE
+            decimal_counter_rst = 1
+        }
+        else{
+            
+            case(game_fsm.q){
+                
+                States.IDLE: 
+                    alufn = b011010                             //A
+                    asel = b11                                  //30
+                    we_regfile = 1 
+                    regfile_write_address = b1000                     //timer reg
+                    regfile_read_address_b = b1000              //direct read (temp reg)
+                
+            }
+        } 
+    }
+}

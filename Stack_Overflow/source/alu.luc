@@ -1,0 +1,91 @@
+module alu (
+    input a[32],
+    input b[32],
+    input alufn[6],
+    output out[32],
+    output zvn[3]
+) {    
+    const SIZE = 32
+    
+    // used for add / mul
+    mux_2 add_mul_select(#SIZE(SIZE))
+    
+    // used for add_mul_select / boolean / compare / shifter
+    mux_4 mux2_bool_cmp_shift_select(#SIZE(SIZE))
+    
+    adder adder(#SIZE(SIZE))
+    multiplier multiplier
+    divider divider
+    bitmask bitmask
+    
+    boolean boolean
+    shifter shifter(#SIZE(SIZE))
+    compare compare
+    
+    sig z
+    sig v
+    sig n
+
+    always {
+        //initialise values
+        adder.alufn = alufn
+        adder.a = a
+        adder.b = b
+        
+        z = adder.z
+        v = adder.v
+        n = adder.n 
+        
+        zvn[0] = z
+        zvn[1] = v
+        zvn[2] = n
+        
+        multiplier.a = a
+        multiplier.b = b
+        
+        bitmask.a = a
+        bitmask.b = b
+        bitmask.alufn = alufn[1:0]
+
+        divider.a = a
+        divider.b = b
+        
+        compare.alufn = alufn
+        compare.z = z
+        compare.v = v
+        compare.n = n
+        
+        boolean.alufn = alufn
+        boolean.a = a
+        boolean.b = b
+        
+        shifter.alufn = alufn
+        shifter.a = a
+        shifter.b = b[4:0]
+        
+        // mux_2 setup
+        add_mul_select.s0 = alufn[1]
+        
+        add_mul_select.in[0] = adder.out
+        add_mul_select.in[1] = multiplier.out
+        
+        //mux_4 setup
+        mux2_bool_cmp_shift_select .s1 = alufn[5]
+        mux2_bool_cmp_shift_select .s0 = alufn[4]
+        
+        mux2_bool_cmp_shift_select.in[0] = add_mul_select.out
+        mux2_bool_cmp_shift_select.in[1] = boolean.out
+        mux2_bool_cmp_shift_select.in[2] = shifter.out
+        mux2_bool_cmp_shift_select.in[3] = c{31x{b0}, compare.out}
+        
+        out = mux2_bool_cmp_shift_select.out
+        
+        // special functionalities, replaces out if fulfilled (refer to operations table)
+        if (alufn == b000011){
+            out = divider.d
+        }
+        else if (alufn == b000100){
+            out = bitmask.masked
+        } 
+    }
+}

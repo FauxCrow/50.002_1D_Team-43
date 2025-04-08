@@ -1,0 +1,56 @@
+module alchitry_top (
+    input clk,              // 100MHz clock
+    input rst_n,            // reset button (active low)
+    output led[8],          // 8 user controllable LEDs
+    input usb_rx,            // USB->Serial input
+    output usb_tx,           // USB->Serial output
+    output io_led[3][8],     // LEDs on IO Shield
+    output io_segment[8],        // 7-segment LEDs on IO Shield
+    output io_select[4],        // Digit select on IO Shield
+    input io_button[5],      // 5 buttons on IO Shield
+    input io_dip[3][8]       // DIP switches on IO Shield
+) {
+    
+    sig rst                 // reset signal
+
+    const CLK_FREQ = $is_sim() ? 1000 : 10000000 // put 1000 for sim, 10000000 otherwise in hardware
+    
+    .clk(clk) {
+        // The reset conditioner is used to synchronize the reset signal to the FPGA
+        // clock. This ensures the entire FPGA comes out of reset at the same time.
+        reset_conditioner reset_cond
+        
+        button_conditioner btn_cond_p1 (#CLK_FREQ(CLK_FREQ))
+        edge_detector edge_dt_btn_p1 (#RISE(1), #FALL(0))
+        
+        .rst(rst){
+            main_beta gameMachine
+        }
+    }
+    
+    // TEST CASES ONLY
+    //alu_manual_tester alu_manual(.clk(clk), .rst(rst), .io_button(io_button), .io_dip(io_dip)) 
+    
+    // 
+    
+    always {
+        reset_cond.in = ~rst_n  // input raw inverted reset signal
+        rst = reset_cond.out    // conditioned reset
+        
+        led = 8h00             // turn LEDs off
+        
+        usb_tx = usb_rx          // loop serial port
+        
+        btn_cond_p1.in=io_button[4] //to reduce the bouncing effects of your button 
+        
+        edge_dt_btn_p1.in=btn_cond_p1.out //get the edge of button press
+        
+        gameMachine.p1_button = edge_dt_btn_p1.out
+        
+        // to test ALU 
+        io_segment = 0
+        io_select = 0         
+        io_led = 3x{{8h00}}
+        
+    }
+}

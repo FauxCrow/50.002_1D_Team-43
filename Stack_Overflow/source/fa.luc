@@ -1,0 +1,16 @@
+// A full adder combinational logic unit 
+// Goal: add both bits together 
+module fa (
+    input a, // a[current bit]
+    input b, // b[current bit]
+    input cin, //
+    output s, //
+    output cout // 
+) {
+    
+    always {
+        s = a ^ b ^ cin // xor ^
+        cout = (a & b) | (b & cin) | (a & cin) // follow schematic :sob:
+    }
+    
+}

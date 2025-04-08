@@ -1,0 +1,72 @@
+//the regfile for all game information
+module main_reg_files (
+    input clk,  // clock
+    input rst,  // reset
+    input write_address[4], // write address
+    input we, // write enable
+    input data[32], // data in
+    
+    
+    input read_address_a[4], //address port a 
+    input read_address_b[4], //address port b
+    output out_a[32], //read port a
+    output out_b[32], //read port b
+    
+    //debug
+    output timer[32],
+    output level[5],
+    output direction[1],
+    output row[8],
+    output prev_row[8]
+    //output counter_out[16]
+    
+) 
+
+{
+    .clk(clk){
+        .rst(rst){
+            dff p1_attributes[32](#INIT(0))
+            //dff current_counter[32](#INIT(0));
+            //dff temp_var[32](#INIT(0))
+            dff current_timer[32](#INIT(0))
+        }
+    }
+    
+    always {
+        
+        //write port
+        if (we){
+            case(write_address){
+                b0000 : current_timer.d = data
+                b0010 : p1_attributes.d = data
+            }
+        }
+        
+        
+        //read port a
+        case(read_address_a){
+            b0000 : out_a = current_timer.q
+            b0010 : out_a = p1_attributes.q
+            default : out_a = 0
+        }
+        
+        //read port b
+        case(read_address_b){
+            b0000 : out_b = current_timer.q
+            b0010 : out_b = p1_attributes.q
+            default : out_b = 0
+        }
+        
+        
+        
+        //For debugging
+        timer = current_timer.q
+        
+        // Attribute Address: [31:24] previous row, [23:16] current row, [13] direction, [4:0] level
+        prev_row = p1_attributes.q[31:24]
+        row = p1_attributes.q[23:16]
+        direction = p1_attributes.q[13]
+        level = p1_attributes.q[4:0]
+        //counter_out = current_counter.q;
+    }
+}

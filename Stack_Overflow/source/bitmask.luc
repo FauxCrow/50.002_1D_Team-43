@@ -1,0 +1,26 @@
+module bitmask #(
+    SIZE = 32 : SIZE > 0
+)(
+    input a[SIZE],  
+    input b[SIZE],  
+    input alufn[2],  
+    output masked[SIZE] 
+) {
+    sig result[32]; 
+
+    always {
+        case (alufn) {
+            b00:
+                result = a & b;  
+            b01:
+                result = a | b;  
+            b10:
+                result = a ^ b;  
+            b11:
+                result = ~b;     
+            default:
+                result = 0;
+        }
+        masked = result
+    }
+}
