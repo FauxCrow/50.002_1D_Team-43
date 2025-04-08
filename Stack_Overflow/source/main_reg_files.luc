@@ -4,8 +4,8 @@ module main_reg_files (
     input rst,  // reset
     input write_address[4], // write address
     input we, // write enable
-    input data[32], // data in
     
+    input data[32], // data in
     
     input read_address_a[4], //address port a 
     input read_address_b[4], //address port b
@@ -37,27 +37,34 @@ module main_reg_files (
         //write port
         if (we){
             case(write_address){
-                b0000 : current_timer.d = data
-                b0010 : p1_attributes.d = data
+                d0 : current_timer.d = data
+                d1 : p1_attributes.d[31:24] = data[31:24] // write to prev row
+                d2 : p1_attributes.d[23:16] = data[23:16] // write to current row
+                d3 : p1_attributes.d[13] = data[13] // write to direction
+                d4 : p1_attributes.d[4:0] = data[4:0] // write to current level
             }
         }
         
         
-        //read port a
+        //read port a -- goes to beta asel mux, flush all values to end
         case(read_address_a){
-            b0000 : out_a = current_timer.q
-            b0010 : out_a = p1_attributes.q
+            d0 : out_a = current_timer.q
+            d1 : out_a = c{24x{0}, p1_attributes.q[31:24]} // prev row
+            d2 : out_a = c{24x{0}, p1_attributes.q[23:16]} // current row
+            d3 : out_a = c{31x{0}, p1_attributes.q[13]} // direction
+            d4 : out_a = c{27x{0}, p1_attributes.q[4:0]} // level
             default : out_a = 0
         }
         
-        //read port b
+        //read port b -- goes to beta bsel mux, flush all values to end
         case(read_address_b){
-            b0000 : out_b = current_timer.q
-            b0010 : out_b = p1_attributes.q
+            d0 : out_b = current_timer.q
+            d1 : out_b = c{24x{0}, p1_attributes.q[31:24]} // prev row
+            d2 : out_b = c{24x{0}, p1_attributes.q[23:16]} // current row
+            d3 : out_b = c{31x{0}, p1_attributes.q[13]} // direction
+            d4 : out_b = c{27x{0}, p1_attributes.q[4:0]} // level
             default : out_b = 0
         }
-        
-        
         
         //For debugging
         timer = current_timer.q

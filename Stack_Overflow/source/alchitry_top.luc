@@ -14,6 +14,7 @@ module alchitry_top (
     sig rst                 // reset signal
 
     const CLK_FREQ = $is_sim() ? 1000 : 10000000 // put 1000 for sim, 10000000 otherwise in hardware
+    const SLOW_CLOCK_DIV = $is_sim() ? 8 : 28 // put 8  for sim, 28 for hardware
     
     .clk(clk) {
         // The reset conditioner is used to synchronize the reset signal to the FPGA
@@ -24,14 +25,9 @@ module alchitry_top (
         edge_detector edge_dt_btn_p1 (#RISE(1), #FALL(0))
         
         .rst(rst){
-            main_beta gameMachine
+            main_beta main_beta(#SLOW_CLOCK_DIV(SLOW_CLOCK_DIV))
         }
     }
-    
-    // TEST CASES ONLY
-    //alu_manual_tester alu_manual(.clk(clk), .rst(rst), .io_button(io_button), .io_dip(io_dip)) 
-    
-    // 
     
     always {
         reset_cond.in = ~rst_n  // input raw inverted reset signal
@@ -41,16 +37,17 @@ module alchitry_top (
         
         usb_tx = usb_rx          // loop serial port
         
-        btn_cond_p1.in=io_button[4] //to reduce the bouncing effects of your button 
-        
-        edge_dt_btn_p1.in=btn_cond_p1.out //get the edge of button press
-        
-        gameMachine.p1_button = edge_dt_btn_p1.out
-        
-        // to test ALU 
+        // initial values
         io_segment = 0
         io_select = 0         
         io_led = 3x{{8h00}}
+        
+        //player 1 inputs
+        btn_cond_p1.in=io_button[4] //to reduce the bouncing effects of your button 
+        edge_dt_btn_p1.in=btn_cond_p1.out //get the edge of button press
+        main_beta.p1_button = edge_dt_btn_p1.out
+        
+        io_led[0] = main_beta.p1_row
         
     }
 }

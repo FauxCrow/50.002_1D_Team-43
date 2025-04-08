@@ -1,11 +1,11 @@
 module main_control_unit (
     input clk,  // clock
     input rst,  // reset
-    input decrease_timer,
-    input regfile_datain[16], //direct reading of regfile data from read_address_b
+    
+    input shift_timer, // timer to indicate time to shift current row
+    input regfile_datain[32], //direct reading of regfile data from read_address_b
     
     input p1_button,
-    //input p2_button,
     
     output alufn[6],
     output asel[3],
@@ -15,13 +15,12 @@ module main_control_unit (
     output regfile_read_address_a[4],
     output regfile_read_address_b[4],
     output we_regfile,
-    output decimal_counter_increase,
-    output decimal_counter_rst,
     output debug[4]
 ) {
     
     enum States {
-        IDLE
+        IDLE,
+        TEST
     }
     
     .clk(clk){
@@ -31,7 +30,6 @@ module main_control_unit (
     }
     
     always {
-        
         // standard setting unless otherwise overwritten by each case 
         alufn = 0
         asel = 0 
@@ -44,27 +42,32 @@ module main_control_unit (
         
         debug = b0000
         
-        decimal_counter_increase = 0
-        decimal_counter_rst = 0
-        
         // connect dffs
         game_fsm.d = game_fsm.q
         
         if (rst){
             game_fsm.d = States.IDLE
-            decimal_counter_rst = 1
         }
         else{
             
             case(game_fsm.q){
+                States.IDLE:
+                    if (shift_timer){
+                        game_fsm.d = States.TEST
+                    }
+                    else if (p1_button){
+                        // do something
+                    }
                 
-                States.IDLE: 
-                    alufn = b011010                             //A
-                    asel = b11                                  //30
+                States.TEST: 
+                    alufn = b000000                            // Add
+                    asel = b00                                 // p1 attributes
+                    bsel = b01                                 // + 1  
                     we_regfile = 1 
-                    regfile_write_address = b1000                     //timer reg
-                    regfile_read_address_b = b1000              //direct read (temp reg)
-                
+                    regfile_write_address = b0010               // write to p1_attributes.d
+                    regfile_read_address_a = b0010              // read from p1_attributes.d
+                    
+                    game_fsm.d = States.IDLE
             }
         } 
     }

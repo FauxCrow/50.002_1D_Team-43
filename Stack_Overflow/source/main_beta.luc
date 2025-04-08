@@ -1,4 +1,6 @@
-module main_beta (
+module main_beta #(
+    SLOW_CLOCK_DIV ~ 26 : SLOW_CLOCK_DIV > 0)
+(
     input p1_button,
     //input p2_button,
     
@@ -6,12 +8,9 @@ module main_beta (
     input rst,  // reset
     
     output debug_out[32],
-    output p1_out[32],
+    output p1_row[8],
     //output p2_out[16],
-    output debug_slowclock,
-   
-    output decimal_counter_increase,
-    output decimal_counter_rst
+    output debug_slowclock
   ) {
   
   //temp variables
@@ -26,26 +25,22 @@ module main_beta (
     .rst(rst){
       main_control_unit main_control_unit;
       main_reg_files players;
-      
-      counter slow_timer(#SIZE(1),#DIV(26)); 
+
+      counter slow_timer(#SIZE(1),#DIV(SLOW_CLOCK_DIV)); 
 
     }
   }
   always {
     
     //edge detectors
-    game_timer_detector.in = slow_timer.value; // 30 second timer detector
+    game_timer_detector.in = slow_timer.value; // shift timer detector
     
-    //pass timer and counter signals to CU unit 
-    main_control_unit.decrease_timer = game_timer_detector.out;
+    //pass timer signals to CU unit 
+    main_control_unit.shift_timer = game_timer_detector.out;
     
     //pass button press signal to CU unit
     main_control_unit.p1_button = p1_button;
     //main_control_unit.p2_button = p2_button;
-    
-    //output of CU to increase 7segment
-    decimal_counter_increase = main_control_unit.decimal_counter_increase;
-    decimal_counter_rst = main_control_unit.decimal_counter_rst;
     
     //Setup REGFILE unit 
     players.we = main_control_unit.we_regfile;
@@ -69,7 +64,7 @@ module main_beta (
     //bsel mux
     case(main_control_unit.bsel){
       b00 : inputAlu_b = players.out_b;
-      //b01 : inputAlu_b = 1;
+      b01 : inputAlu_b = 1; // used to add 1 / shift 1
       //b11 : inputAlu_b = 3;
       //b10 : inputAlu_b = 0;
       default: //necessary to init
@@ -80,14 +75,13 @@ module main_beta (
     //ALU
     game_alu.a = inputAlu_a;
     game_alu.b = inputAlu_b;
-    game_alu.alufn = main_control_unit.alufn;
-   
+    game_alu.alufn = main_control_unit.alufn; // take alufn from fsm
     
     //wdsel mux
     case (main_control_unit.alu_out_sel){
-      b01 : players.data = b1111111111111111;
-      b10 : players.data = b0000000000001111;
-      b11 : players.data = 0;
+      b01 : players.data = b1111111111111111; // winning
+      b10 : players.data = b0000000000001111; // losing
+      b11 : players.data = 0; //draw
       default : //b00
           players.data = game_alu.out;
     }
@@ -99,8 +93,7 @@ module main_beta (
     
     debug_out = players.timer;
  //   debug_out = vc.debug;
-    p1_out = players.row;
-    //p2_out = players.all_scores[31:16];
+    p1_row = players.row;
     debug_slowclock = slow_timer.value;
   }
 }
