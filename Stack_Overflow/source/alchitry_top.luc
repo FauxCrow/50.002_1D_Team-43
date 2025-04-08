@@ -48,6 +48,7 @@ module alchitry_top (
         main_beta.p1_button = edge_dt_btn_p1.out
         
         io_led[0] = main_beta.p1_row
+        led[0] = main_beta.debug_slowclock
         
     }
 }

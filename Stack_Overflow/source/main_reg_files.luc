@@ -38,9 +38,9 @@ module main_reg_files (
         if (we){
             case(write_address){
                 d0 : current_timer.d = data
-                d1 : p1_attributes.d[31:24] = data[31:24] // write to prev row
-                d2 : p1_attributes.d[23:16] = data[23:16] // write to current row
-                d3 : p1_attributes.d[13] = data[13] // write to direction
+                d1 : p1_attributes.d[31:24] = data[7:0] // write to prev row
+                d2 : p1_attributes.d[23:16] = data[7:0] // write to current row
+                d3 : p1_attributes.d[13] = data[0] // write to direction
                 d4 : p1_attributes.d[4:0] = data[4:0] // write to current level
             }
         }
