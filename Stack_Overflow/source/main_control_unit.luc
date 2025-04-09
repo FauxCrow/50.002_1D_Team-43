@@ -6,6 +6,7 @@ module main_control_unit (
     input regfile_datain[32], //direct reading of regfile data from read_address_b
     
     input p1_button,
+    input reset_button,
     
     output alufn[6],
     output asel[3],
@@ -19,7 +20,15 @@ module main_control_unit (
 ) {
     
     enum States {
+        SET_ROW,
         IDLE,
+        CHECK_DIRECTION,
+        CHECK_RIGHT_END,
+        CHANGE_RIGHT_LEFT,
+        CHANGE_LEFT_RIGHT,
+        CHECK_LEFT_END,
+        LEFT_SHIFT,
+        RIGHT_SHIFT,
         TEST
     }
     
@@ -35,7 +44,7 @@ module main_control_unit (
         asel = 0 
         bsel = 0
         we_regfile = 0
-        regfile_write_address = 1111
+        regfile_write_address = d0
         regfile_read_address_a = 0000
         regfile_read_address_b = 0000
         alu_out_sel = 0
@@ -46,26 +55,145 @@ module main_control_unit (
         game_fsm.d = game_fsm.q
         
         if (rst){
-            game_fsm.d = States.IDLE
+            game_fsm.d = States.SET_ROW
         }
         else{
             
-            case(game_fsm.q){
+            case(game_fsm.q){                
                 States.IDLE:
                     if (shift_timer){
-                        game_fsm.d = States.TEST
+                        game_fsm.d = States.CHECK_DIRECTION
+                        //game_fsm.d = States.TEST
                     }
                     else if (p1_button){
-                        // do something
+                        game_fsm.d = States.TEST
+                    }
+                    else if (reset_button){
+                        game_fsm.d = States.SET_ROW
                     }
                 
-                States.TEST: 
-                    alufn = b000000                            // Add
+                States.SET_ROW:
+                    regfile_read_address_b = d5
+                    if (regfile_datain[1]){
+                        if (regfile_datain[0]){ //b11, 1 tiles
+                            asel = b11                                 // +8
+                            bsel = b00                                 // p1 attributes  
+                        }
+                        else { //b10, 2 tiles
+                            asel = b10                                 // +24
+                            bsel = b00                                 // p1 attributes 
+                        }
+                    }
+                    else {
+                        if (regfile_datain[0]){ // b01, 3 tile
+                            asel = b01                                 // +28
+                            bsel = b00                                 // p1 attributes                            
+                        }
+                        else { //b00, 4 tiles
+                            asel = b00                                 // p1 attributes
+                            bsel = b11                                 // + 60  
+                        }
+                    }
+                    
+                    alufn = b000000                            // add
+                    we_regfile = 1 
+                    regfile_write_address = d2               // write to current row
+                    regfile_read_address_a = d2              // read from current row
+                    regfile_read_address_b = d2              // read from current row
+                    
+                    game_fsm.d = States.IDLE
+                
+                States.CHECK_DIRECTION: 
+                    regfile_read_address_b = d3              // temp reg, read from direction
+                    if (regfile_datain[0]){                    // if bit 0 (direction) is 1, we're going right
+                        game_fsm.d = States.CHECK_RIGHT_END
+                    }
+                    else{                                       // if bit 0 (direction) is 0, we're going left
+                        game_fsm.d = States.CHECK_LEFT_END
+                    }
+                
+                States.CHECK_RIGHT_END:
+                    regfile_read_address_b = d2                 // temp reg, read from current row
+                    if (regfile_datain[0]){                    // if bit 0 (current row) is 1, we're changing direction
+                        game_fsm.d = States.CHANGE_RIGHT_LEFT
+                    }
+                    else{                                       // if bit 0 (direction) is 0, we're going continuing
+                        game_fsm.d = States.RIGHT_SHIFT
+                    }
+                
+                States.CHANGE_RIGHT_LEFT:                    // swap from 1 to 0
+                    alufn = b000001                            // subtract
+                    asel = b00                                 // p1 attributes
+                    bsel = b01                                 // - 1  
+                    we_regfile = 1 
+                    regfile_write_address = d3               // write to direction
+                    regfile_read_address_a = d3              // read from direction
+                    regfile_read_address_b = d3              // read from direction
+                    
+                    game_fsm.d = States.LEFT_SHIFT
+                
+                
+                States.CHECK_LEFT_END:
+                    regfile_read_address_b = d2                 // temp reg, read from current row
+                    if (regfile_datain[7]){                    // if bit 7 (current row) is 1, we're changing direction
+                        game_fsm.d = States.CHANGE_LEFT_RIGHT
+                    }
+                    else{                                       // if bit 0 (direction) is 0, we're going continuing
+                        game_fsm.d = States.LEFT_SHIFT
+                    }
+                
+                States.CHANGE_LEFT_RIGHT:                    // swap from 0 to 1
+                    alufn = b000000                            // add
                     asel = b00                                 // p1 attributes
                     bsel = b01                                 // + 1  
                     we_regfile = 1 
-                    regfile_write_address = b0010               // write to p1_attributes.d
-                    regfile_read_address_a = b0010              // read from p1_attributes.d
+                    regfile_write_address = d3               // write to direction
+                    regfile_read_address_a = d3              // read from direction
+                    regfile_read_address_b = d3              // read from direction
+                    
+                    game_fsm.d = States.RIGHT_SHIFT
+                
+                States.LEFT_SHIFT:                            // 1 bit shift left
+                    alufn = b100000                           // left shift
+                    asel = b00                                 // p1 attributes
+                    bsel = b01                                 // 1  
+                    we_regfile = 1 
+                    regfile_write_address = d2               // write to current row
+                    regfile_read_address_a = d2              // read from current row
+                    regfile_read_address_b = d2              // read from current row
+                    
+                    game_fsm.d = States.IDLE
+                
+                States.RIGHT_SHIFT:                           // 1 bit shift right
+                    alufn = b100001                           // right shift
+                    asel = b00                                 // p1 attributes
+                    bsel = b01                                 // 1  
+                    we_regfile = 1 
+                    regfile_write_address = d2               // write to current row
+                    regfile_read_address_a = d2              // read from current row
+                    regfile_read_address_b = d2              // read from current row
+                    
+                    game_fsm.d = States.IDLE
+                
+                
+                // Unnecessary, just a test
+                States.TEST: 
+                    regfile_read_address_b = d2                 // temp reg, read from current row
+                    if (regfile_datain[1]){                    // if bit 7 (current row) is 1, we're changing direction
+                        asel = b11                                 // + 1  
+                        bsel = b00
+                    }
+                    else{                                       // if bit 0 (direction) is 0, we're going continuing
+                        asel = b00                                 // p1 attributes
+                        bsel = b01                                 // + 1  
+                    }
+                    
+                    alufn = b000000                            // Add
+                    
+                    we_regfile = 1 
+                    regfile_write_address = d2               // write to current row
+                    regfile_read_address_a = d2              // read from current row
+                    regfile_read_address_b = d2              // read from current row
                     
                     game_fsm.d = States.IDLE
             }

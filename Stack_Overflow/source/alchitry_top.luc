@@ -24,6 +24,9 @@ module alchitry_top (
         button_conditioner btn_cond_p1 (#CLK_FREQ(CLK_FREQ))
         edge_detector edge_dt_btn_p1 (#RISE(1), #FALL(0))
         
+        button_conditioner btn_cond_reset (#CLK_FREQ(CLK_FREQ))
+        edge_detector edge_dt_btn_reset (#RISE(1), #FALL(0))
+        
         .rst(rst){
             main_beta main_beta(#SLOW_CLOCK_DIV(SLOW_CLOCK_DIV))
         }
@@ -44,11 +47,18 @@ module alchitry_top (
         
         //player 1 inputs
         btn_cond_p1.in=io_button[4] //to reduce the bouncing effects of your button 
-        edge_dt_btn_p1.in=btn_cond_p1.out //get the edge of button press
-        main_beta.p1_button = edge_dt_btn_p1.out
+        edge_dt_btn_reset.in=btn_cond_p1.out //get the edge of button press
+        main_beta.p1_button = edge_dt_btn_reset.out
+        
+        //reset inputs
+        btn_cond_reset.in=io_button[2] //to reduce the bouncing effects of your button 
+        edge_dt_btn_p1.in=btn_cond_reset.out //get the edge of button press
+        main_beta.reset_button = edge_dt_btn_p1.out
         
         io_led[0] = main_beta.p1_row
         led[0] = main_beta.debug_slowclock
+        
+        led[1] = main_beta.direction
         
     }
 }

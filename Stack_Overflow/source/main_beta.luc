@@ -2,6 +2,7 @@ module main_beta #(
     SLOW_CLOCK_DIV ~ 26 : SLOW_CLOCK_DIV > 0)
 (
     input p1_button,
+    input reset_button,
     //input p2_button,
     
     input clk,  // clock
@@ -9,6 +10,7 @@ module main_beta #(
     
     output debug_out[32],
     output p1_row[8],
+    output direction[1],
     //output p2_out[16],
     output debug_slowclock
 ) {
@@ -40,6 +42,7 @@ module main_beta #(
         
         //pass button press signal to CU unit
         main_control_unit.p1_button = p1_button
+        main_control_unit.reset_button = reset_button
         //main_control_unit.p2_button = p2_button;
         
         //Setup REGFILE unit 
@@ -96,6 +99,7 @@ module main_beta #(
         debug_out = players.timer
         //   debug_out = vc.debug;
         p1_row = players.row
+        direction = players.direction
         debug_slowclock = slow_timer.value
     }
 }
