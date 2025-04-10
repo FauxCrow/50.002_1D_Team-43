@@ -16,9 +16,10 @@ module main_reg_files (
     output timer[32],
     output level[5],
     output direction[1],
-    output tiles[2],
     output row[8],
-    output prev_row[8]
+    output prev_row[8],
+    output win[1],
+    output lose[1]
     //output counter_out[16]
     
 ) 
@@ -43,7 +44,11 @@ module main_reg_files (
                 d2 : p1_attributes.d[23:16] = data[7:0] // write to current row
                 d3 : p1_attributes.d[13] = data[0] // write to direction
                 d4 : p1_attributes.d[4:0] = data[4:0] // write to current level
-                d5 : p1_attributes.d[6:5] = data[6:5] // write to no. of tiles
+                d5 : p1_attributes.d[8] = data[0] // temp var, for compare
+                d6 : p1_attributes.d = data // entire dff, to clear
+                
+                d7 : p1_attributes.d = data[5] // temp win
+                d8 : p1_attributes.d = data[6] // temp lose
             }
         }
         
@@ -55,7 +60,8 @@ module main_reg_files (
             d2 : out_a = c{24x{0}, p1_attributes.q[23:16]} // current row
             d3 : out_a = c{31x{0}, p1_attributes.q[13]} // direction
             d4 : out_a = c{27x{0}, p1_attributes.q[4:0]} // level
-            d5 : out_a = c{30x{0}, p1_attributes.q[6:5]} // no. of tiles
+            d5 : out_a = c{31x{0}, p1_attributes.q[8]} // temp var
+            d6 : out_a = p1_attributes.q // entire dff, to clear
             default : out_a = 0
         }
         
@@ -66,19 +72,21 @@ module main_reg_files (
             d2 : out_b = c{24x{0}, p1_attributes.q[23:16]} // current row
             d3 : out_b = c{31x{0}, p1_attributes.q[13]} // direction
             d4 : out_b = c{27x{0}, p1_attributes.q[4:0]} // level
-            d5 : out_b = c{30x{0}, p1_attributes.q[6:5]} // no. of tiles
+            d5 : out_b = c{31x{0}, p1_attributes.q[8]} // temp var
+            d6 : out_b = p1_attributes.q // entire dff, to clear
             default : out_b = 0
         }
         
         //For debugging
         timer = current_timer.q
         
-        // Attribute Address: [31:24] previous row, [23:16] current row, [13] direction, [6:5] tiles, [4:0] level
+        // Attribute Address: [31:24] previous row, [23:16] current row, [13] direction, [4:0] level
         prev_row = p1_attributes.q[31:24]
         row = p1_attributes.q[23:16]
         direction = p1_attributes.q[13]
         level = p1_attributes.q[4:0]
-        tiles = p1_attributes.q[6:5]
+        win = p1_attributes.q[5]
+        lose = p1_attributes.q[6]
         //counter_out = current_counter.q;
     }
 }

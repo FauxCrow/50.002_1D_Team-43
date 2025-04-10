@@ -45,20 +45,25 @@ module alchitry_top (
         io_select = 0         
         io_led = 3x{{8h00}}
         
-        //player 1 inputs
-        btn_cond_p1.in=io_button[4] //to reduce the bouncing effects of your button 
+        //player 1 inputs -- bottom
+        btn_cond_p1.in=io_button[2] //to reduce the bouncing effects of your button 
         edge_dt_btn_reset.in=btn_cond_p1.out //get the edge of button press
         main_beta.p1_button = edge_dt_btn_reset.out
         
-        //reset inputs
-        btn_cond_reset.in=io_button[2] //to reduce the bouncing effects of your button 
+        //reset inputs -- top
+        btn_cond_reset.in=io_button[0] //to reduce the bouncing effects of your button 
         edge_dt_btn_p1.in=btn_cond_reset.out //get the edge of button press
         main_beta.reset_button = edge_dt_btn_p1.out
         
         io_led[0] = main_beta.p1_row
-        led[0] = main_beta.debug_slowclock
+        io_led[1] = main_beta.p1_prev_row
+        io_led[2] = main_beta.level
         
+        // side LEDs
+        led[0] = main_beta.debug_slowclock
         led[1] = main_beta.direction
+        led[6] = main_beta.lose
+        led[7] = main_beta.win
         
     }
 }

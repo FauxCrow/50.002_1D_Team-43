@@ -10,7 +10,11 @@ module main_beta #(
     
     output debug_out[32],
     output p1_row[8],
+    output p1_prev_row[8],
     output direction[1],
+    output level[5],
+    output win[1],
+    output lose[1],
     //output p2_out[16],
     output debug_slowclock
 ) {
@@ -58,9 +62,7 @@ module main_beta #(
         //asel mux
         case(main_control_unit.asel){
             b00  : inputAlu_a = players.out_a
-            b01  : inputAlu_a = 28 // used to set from 00000000 to 00011100 
-            b10  : inputAlu_a = 24 // used to set from 00000000 to 00011000
-            b11  : inputAlu_a = 8 // used to set from 00000000 to 00001000
+            b01  : inputAlu_a = 0
             
             default : //necessary to init
                 inputAlu_a = 0
@@ -99,7 +101,11 @@ module main_beta #(
         debug_out = players.timer
         //   debug_out = vc.debug;
         p1_row = players.row
+        p1_prev_row = players.prev_row
         direction = players.direction
+        level = players.level
+        win = players.win
+        lose = players.lose
         debug_slowclock = slow_timer.value
     }
 }
