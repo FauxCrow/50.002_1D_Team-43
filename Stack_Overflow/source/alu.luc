@@ -14,8 +14,8 @@ module alu (
     mux_4 mux2_bool_cmp_shift_select(#SIZE(SIZE))
     
     adder adder(#SIZE(SIZE))
-    multiplier multiplier
-    divider divider
+    //multiplier multiplier
+    //divider divider
     bitmask bitmask
     
     boolean boolean
@@ -40,15 +40,15 @@ module alu (
         zvn[1] = v
         zvn[2] = n
         
-        multiplier.a = a
-        multiplier.b = b
+        //multiplier.a = a
+        //multiplier.b = b
         
         bitmask.a = a
         bitmask.b = b
         bitmask.alufn = alufn[1:0]
 
-        divider.a = a
-        divider.b = b
+        //divider.a = a
+        //divider.b = b
         
         compare.alufn = alufn
         compare.z = z
@@ -67,7 +67,7 @@ module alu (
         add_mul_select.s0 = alufn[1]
         
         add_mul_select.in[0] = adder.out
-        add_mul_select.in[1] = multiplier.out
+        add_mul_select.in[1] = 32x{b0} // multiplier.out
         
         //mux_4 setup
         mux2_bool_cmp_shift_select .s1 = alufn[5]
@@ -81,10 +81,10 @@ module alu (
         out = mux2_bool_cmp_shift_select.out
         
         // special functionalities, replaces out if fulfilled (refer to operations table)
-        if (alufn == b000011){
-            out = divider.d
-        }
-        else if (alufn == b000100){
+        //if (alufn == b000011){
+        //    out = divider.d
+        //}
+        if (alufn == b000100){
             out = bitmask.masked
         } 
     }

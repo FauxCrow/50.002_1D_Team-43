@@ -47,8 +47,8 @@ module main_reg_files (
                 d5 : p1_attributes.d[8] = data[0] // temp var, for compare
                 d6 : p1_attributes.d = data // entire dff, to clear
                 
-                d7 : p1_attributes.d = data[5] // temp win
-                d8 : p1_attributes.d = data[6] // temp lose
+                d7 : p1_attributes.d[5] = data[0] // temp win
+                d8 : p1_attributes.d[6] = data[0] // temp lose
             }
         }
         
@@ -62,6 +62,8 @@ module main_reg_files (
             d4 : out_a = c{27x{0}, p1_attributes.q[4:0]} // level
             d5 : out_a = c{31x{0}, p1_attributes.q[8]} // temp var
             d6 : out_a = p1_attributes.q // entire dff, to clear
+            d7 : out_a = c{31x{0}, p1_attributes.q[5]} // win
+            d8 : out_a = c{31x{0}, p1_attributes.q[6]} // lose
             default : out_a = 0
         }
         

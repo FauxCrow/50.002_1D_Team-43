@@ -97,26 +97,12 @@ module main_control_unit (
                     game_fsm.d = States.SET_PREV_ROW
                 
                 States.SET_PREV_ROW: // Set prev row -- 
-                    regfile_read_address_b = d4
-                    if (regfile_datain[1] == d0){
-                        alufn = b000000                            // add
-                        asel = b00                                 // p1 attributes
-                        bsel = b11                                 // + 60  
-                        we_regfile = 1 
-                        regfile_write_address = d1               // write to prev row
-                        regfile_read_address_a = d1              // read from prev row
-                        regfile_read_address_b = d1              // read from prev row
-                    }
-                    
-                    game_fsm.d = States.SET_ROW
-                
-                States.SET_ROW:                             // Set current row as previous row
                     alufn = b000000                            // add
                     asel = b00                                 // p1 attributes
-                    bsel = b00                                 // p1 attributes  
+                    bsel = b11                                 // + 60  
                     we_regfile = 1 
-                    regfile_write_address = d2               // write to current row
-                    regfile_read_address_a = d2              // read from current row
+                    regfile_write_address = d1               // write to prev row
+                    regfile_read_address_a = d1              // read from prev row
                     regfile_read_address_b = d1              // read from prev row
                     
                     game_fsm.d = States.ADD_LEVEL
@@ -128,6 +114,17 @@ module main_control_unit (
                     we_regfile = 1 
                     regfile_write_address = d4               // write to current level
                     regfile_read_address_a = d4              // read from current level               
+                    
+                    game_fsm.d = States.SET_ROW
+                
+                States.SET_ROW:                             // Set current row as previous row
+                    alufn = b000000                            // add
+                    asel = b00                                 // p1 attributes
+                    bsel = b00                                 // p1 attributes  
+                    we_regfile = 1 
+                    regfile_write_address = d2               // write to current row
+                    regfile_read_address_a = d2              // read from current row
+                    regfile_read_address_b = d1              // read from prev row
                     
                     game_fsm.d = States.IDLE
                 
@@ -254,7 +251,7 @@ module main_control_unit (
                     }
                 
                 States.UPDATE_TOP:
-                    alufn = b000100                           // ADD
+                    alufn = b000000                           // ADD
                     asel = b00                                 // p1 attributes
                     bsel = b01                                 // + 1  
                     we_regfile = 1
@@ -265,7 +262,7 @@ module main_control_unit (
                 
                 States.CHECK_TOP:
                     regfile_read_address_b = d4                 // read from current level
-                    if (regfile_datain[4:0] == d16){                    // if current level = 16, end winner 
+                    if (regfile_datain[4:0] == b10000){         // if current level = 16, end winner 
                         game_fsm.d = States.WIN
                     }
                     else{                                       // if not, setup for next level
@@ -287,10 +284,11 @@ module main_control_unit (
                     // alu_out_sel = b01           //P1 winning signal, code for when we have matrix
                     
                     alufn = b000000                            // add
-                    asel = b01                                 // 0
+                    asel = b00                                 // p1 attributes
                     bsel = b01                                 // + 1  
                     we_regfile = 1 
                     regfile_write_address = d7               // write to win
+                    regfile_read_address_a = d7              // read from current row
                     
                     game_fsm.d = States.GAME_OVER 
                 
@@ -298,15 +296,21 @@ module main_control_unit (
                     //alu_out_sel = b10           //P1 losing signal, code for when we have matrix
                     
                     alufn = b000000                            // add
-                    asel = b01                                 // 0
+                    asel = b00                                 // p1 attributes
                     bsel = b01                                 // + 1  
                     we_regfile = 1 
                     regfile_write_address = d8               // write to lose 
+                    regfile_read_address_a = d8              // read from current row
                     
                     game_fsm.d = States.GAME_OVER 
                 
                 States.GAME_OVER:                            // loops until reset button hit
-                    game_fsm.d = States.GAME_OVER
+                    if (reset_button) {
+                        game_fsm.d = States.CLEAR
+                    } 
+                    else {
+                        game_fsm.d = States.GAME_OVER
+                    }
                 
                 // Unnecessary, just a test
                 States.TEST: 

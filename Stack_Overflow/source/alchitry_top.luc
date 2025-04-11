@@ -12,7 +12,7 @@ module alchitry_top (
 ) {
     
     sig rst                 // reset signal
-
+    
     const CLK_FREQ = $is_sim() ? 1000 : 10000000 // put 1000 for sim, 10000000 otherwise in hardware
     const SLOW_CLOCK_DIV = $is_sim() ? 8 : 28 // put 8  for sim, 28 for hardware
     
@@ -41,10 +41,10 @@ module alchitry_top (
         usb_tx = usb_rx          // loop serial port
         
         // initial values
-        io_segment = 0
-        io_select = 0         
+        io_segment = 8h00
+        io_select = 4h0       
         io_led = 3x{{8h00}}
-        
+
         //player 1 inputs -- bottom
         btn_cond_p1.in=io_button[2] //to reduce the bouncing effects of your button 
         edge_dt_btn_reset.in=btn_cond_p1.out //get the edge of button press
@@ -62,8 +62,8 @@ module alchitry_top (
         // side LEDs
         led[0] = main_beta.debug_slowclock
         led[1] = main_beta.direction
-        led[6] = main_beta.lose
-        led[7] = main_beta.win
+        led[2] = main_beta.win
+        led[3] = main_beta.lose
         
     }
 }
