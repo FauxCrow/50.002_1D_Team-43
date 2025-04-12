@@ -1,4 +1,4 @@
-module main_beta #(
+module game_datapath #(
     SLOW_CLOCK_DIV ~ 26 : SLOW_CLOCK_DIV > 0)
 (
     input p1_button,
@@ -29,8 +29,8 @@ module main_beta #(
         edge_detector game_timer_detector(#RISE(1), #FALL(0))
         
         .rst(rst){
-            main_control_unit main_control_unit
-            main_reg_files players
+            game_cu main_control_unit
+            game_regfiles players
             
             counter slow_timer(#SIZE(1),#DIV(SLOW_CLOCK_DIV)) 
             

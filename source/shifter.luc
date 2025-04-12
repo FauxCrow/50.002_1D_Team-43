@@ -1,42 +1,74 @@
 module shifter #(
     SIZE = 32 : SIZE > 0
 )(
-    input a[32],
+    input a[SIZE],
     input b[5],
     input alufn[6],
-    output shift[32]
-) {
-    mux_4_32bit shifter_unit(#SIZE(SIZE))
+    output shift[SIZE]
+) {     
+    x_bit_left_shifter left_shifter[5](#SHIFT({5d16, 5d8, 5d4, 5d2, 5d1}))
+    x_bit_right_shifter right_arith_shifter[5](#SHIFT({5d16, 5d8, 5d4, 5d2, 5d1}))
+    x_bit_right_shifter right_shifter[5](#SHIFT({5d16, 5d8, 5d4, 5d2, 5d1}))
     
-    left_shifter left_shifter
-    right_arith_shifter right_arith_shifter
-    right_shifter right_shifter
- 
     always {
-        // left shift input
-        left_shifter.a = a
-        left_shifter.b = b
+        //initialise values
+        left_shifter.a = 5x{{32b0}}
+        left_shifter.do_shift = 0
+        left_shifter.pad = 0
         
-        // right shift input
-        right_shifter.a = a
-        right_shifter.b = b
+        right_arith_shifter.a = 5x{{32b0}}
+        right_arith_shifter.do_shift = 0
+        right_arith_shifter.pad = 0
         
-        // right arith shift input
-        right_arith_shifter.a = a
-        right_arith_shifter.b = b
+        right_shifter.a = 5x{{32b0}}
+        right_shifter.do_shift = 0
+        right_shifter.pad = 0
         
-        // implement shifter unit logic here
-        shifter_unit.in[0] = left_shifter.shl
-        shifter_unit.in[1] = right_shifter.shr
-        shifter_unit.in[2] = a // if select wrong, nothing changes
-        shifter_unit.in[3] = right_arith_shifter.shr
+        // left shifter logic
+        repeat(i,5) {
+            if (i==0) {
+                left_shifter.a[i] = a
+            } 
+            else {
+                left_shifter.a[i] = left_shifter.out[i-1]
+            }
+            left_shifter.do_shift[i] = b[i]
+            left_shifter.pad[i] = 0
+        }
         
-        // implement control signals to determine operation
-        shifter_unit.s0 = alufn[0]
-        shifter_unit.s1 = alufn[1]
+        //right arith shifter logic
+        repeat(i,5) {
+            if (i==0) {
+                right_arith_shifter.a[i] = a
+            } 
+            else {
+                right_arith_shifter.a[i] = right_arith_shifter.out[i-1]
+            }
+            right_arith_shifter.do_shift[i] = b[i]
+            right_arith_shifter.pad[i] = a[31]
+        }
         
-        // returns chosen operation
-        shift = shifter_unit.out
+        // right shifter logic
+        repeat(i,5) {
+            if (i==0) {
+                right_shifter.a[i] = a
+            } 
+            else {
+                right_shifter.a[i] = right_shifter.out[i-1]
+            }
+            right_shifter.do_shift[i] = b[i]
+            right_shifter.pad[i] = 0
+        }
         
+        case (alufn[1:0]){
+            b00:
+                shift = left_shifter.out[4]
+            b01:
+                shift = right_shifter.out[4]
+            b11:
+                shift = right_arith_shifter.out[4]
+            default:
+                shift = 0
+        }  
     } 
 }

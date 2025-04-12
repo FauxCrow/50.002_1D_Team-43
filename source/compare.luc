@@ -1,5 +1,5 @@
 module compare #(
-    SIZE = 32 : SIZE > 0
+    SIZE = 32 : SIZE > 1
 )(
     input z,
     input v,
@@ -35,5 +35,3 @@ module compare #(
         
     }
 }
-
-

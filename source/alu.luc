@@ -6,54 +6,46 @@ module alu (
     output zvn[3]
 ) {
     const SIZE = 32
-
-    sig z;
-    sig v;
-    sig n;
+    
+    sig out_sig[32]
+    sig z
+    sig v
+    sig n
     
     // instantiate all control units
     adder adder(#SIZE(SIZE))
-    multiplier multiplier
-    shifter shifter
+    bitmask bitmask
     compare compare
     boolean boolean
-    bm bitmask
-    divider divider
-
-    mux_2_32bit alu_select_2(#SIZE(SIZE)) // used for add / mul
-    mux_4_32bit alu_select_4(#SIZE(SIZE)) // used for mux_2 select, compare, bool, shift
+    shifter shifter
     
-    always {
-        // setup selector for mux_2
-        alu_select_2.s0 = alufn[1]
-        
+    
+    always {        
         // adder inputs
         adder.a = a
         adder.b = b
         adder.alufn = alufn
-
+        
         // set signals based on adder overflow
         z = adder.z
         v = adder.v
         n = adder.n
-
+        
         // set outputs zvn
         zvn[0] = z
         zvn[1] = v
         zvn[2] = n
         
-        // multiplier inputs
-        multiplier.a = a
-        multiplier.b = b
+        // bitmask inputs
+        bitmask.a = a
+        bitmask.b = b
+        bitmask.alufn = alufn[1:0]
         
-        // add all selections add and multiply in mux_2 inputs based on operation table
-        alu_select_2.in[0] = adder.out
-        alu_select_2.in[1] = multiplier.mul
-        //alu_select_2.in = c{{adder.out},{multiplier.mul}}
-        
-        // setup selector for mux_4
-        alu_select_4.s1 = alufn[5]
-        alu_select_4.s0 = alufn[4]
+        // compute 1 bit inputs
+        compare.z = z
+        compare.v = v
+        compare.n = n
+        compare.alufn = alufn
         
         // boolean inputs
         boolean.a = a
@@ -65,36 +57,51 @@ module alu (
         shifter.b = b[4:0]
         shifter.alufn = alufn
         
-        // compute 1 bit inputs
-        compare.z = z
-        compare.v = v
-        compare.n = n
-        compare.alufn = alufn
-        
-        // add all input mux_2, boolean, shifter, compare as mux_4 in
-        alu_select_4.in[0] = alu_select_2.out
-        alu_select_4.in[1] = boolean.bool
-        alu_select_4.in[2] = shifter.shift
-        alu_select_4.in[3] = c{31x{b0}, compare.cmp}
-
-        // set out based on output of alu_select
-        out = alu_select_4.out   
-
-        // bit masking inputs
-        bitmask.a = a
-        bitmask.b = b
-        bitmask.alufn = alufn[1:0]
-
-        // division inputs
-        divider.a = a
-        divider.b = b
-
-        // special functionalities, replaces out if fulfilled (refer to operations table)
-        if (alufn == b000011){
-            out = divider.d
+        case(alufn){
+            b000000: // ADD
+                out_sig = adder.out
+                z = adder.z
+                v = adder.v
+                n = adder.n
+            b000001: // SUB
+                out_sig = adder.out
+                z = adder.z
+                v = adder.v
+                n = adder.n  
+            b000100: 
+                out_sig = bitmask.masked
+            b011000: // BITWISE AND
+                out_sig = boolean.bool
+            b011110: // BITWISE OR 
+                out_sig = boolean.bool
+            b010110: // BITWISE XOR
+                out_sig = boolean.bool
+            b011010: // "A"
+                out_sig = boolean.bool
+            b100000: // SHL 
+                out_sig = shifter.shift
+            b100001: // SHR 
+                out_sig = shifter.shift
+            b100011: // SRA 
+                out_sig = shifter.shift
+            b110011: // CMPEQ 
+                out_sig = c{31x{b0}, compare.cmp}
+            b110101: // CMPLT 
+                out_sig = c{31x{b0}, compare.cmp}
+            b110111: // CMPLE
+                out_sig = c{31x{b0}, compare.cmp}
+            
+            
+            default:
+                out_sig = 0
+            
+            
         }
-        else if (alufn == b000100){
-            out = bitmask.masked
-        } 
+        
+        
+        out = out_sig
+        
+        
+        
     }
 }

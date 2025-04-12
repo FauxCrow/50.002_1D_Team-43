@@ -1,5 +1,4 @@
-//the regfile for all game information
-module main_reg_files (
+module game_regfiles (
     input clk,  // clock
     input rst,  // reset
     input write_address[4], // write address

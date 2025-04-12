@@ -1,4 +1,4 @@
-module main_control_unit (
+module game_cu (
     input clk,  // clock
     input rst,  // reset
     
@@ -42,8 +42,7 @@ module main_control_unit (
         CLEAR_CURRENT,
         WIN, 
         LOSE,
-        GAME_OVER,
-        TEST
+        GAME_OVER
     }
     
     .clk(clk){
@@ -311,27 +310,6 @@ module main_control_unit (
                     else {
                         game_fsm.d = States.GAME_OVER
                     }
-                
-                // Unnecessary, just a test
-                States.TEST: 
-                    regfile_read_address_b = d2                 // temp reg, read from current row
-                    if (regfile_datain[1]){                    // if bit 7 (current row) is 1, we're changing direction
-                        asel = b11                                 // + 1  
-                        bsel = b00
-                    }
-                    else{                                       // if bit 0 (direction) is 0, we're going continuing
-                        asel = b00                                 // p1 attributes
-                        bsel = b01                                 // + 1  
-                    }
-                    
-                    alufn = b000000                            // Add
-                    
-                    we_regfile = 1 
-                    regfile_write_address = d2               // write to current row
-                    regfile_read_address_a = d2              // read from current row
-                    regfile_read_address_b = d2              // read from current row
-                    
-                    game_fsm.d = States.IDLE
             }
         } 
     }

@@ -1,7 +1,7 @@
 {
     "project": {
         "type": "V1.3",
-        "projectName": "alu",
+        "projectName": "Stack_Overflow",
         "board": "Alchitry Au",
         "sourceFiles": [
             {
@@ -20,121 +20,43 @@
             {
                 "file": {
                     "type": "DiskFile",
-                    "path": "source/rca.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
-                    "path": "source/fa.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
-                    "path": "source/bit_reverse.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
-                    "path": "source/boolean.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
-                    "path": "source/compare.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
-                    "path": "source/shifter.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
-                    "path": "source/multiplier.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
                     "path": "source/alu.luc"
                 }
             },
             {
                 "file": {
-                    "type": "DiskFile",
-                    "path": "source/adder.luc"
+                    "type": "Component",
+                    "path": "Pulses/edge_detector.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "Component",
+                    "path": "Miscellaneous/counter.luc"
                 }
             },
             {
                 "file": {
                     "type": "DiskFile",
-                    "path": "source/alu_manual_tester.luc"
+                    "path": "source/game_cu.luc"
                 }
             },
             {
                 "file": {
                     "type": "DiskFile",
-                    "path": "source/mux_4.luc"
+                    "path": "source/multi_seven_seg.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "Component",
+                    "path": "Miscellaneous/decoder.luc"
                 }
             },
             {
                 "file": {
                     "type": "DiskFile",
-                    "path": "source/mux_2.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
-                    "path": "source/divider.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
-                    "path": "source/left_shifter.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
-                    "path": "source/right_arith_shifter.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
-                    "path": "source/x_bit_left_shifter.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
-                    "path": "source/x_bit_right_shifter.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
-                    "path": "source/right_shifter.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
-                    "path": "source/bm.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
-                    "path": "source/alu_tester_rom.luc"
+                    "path": "source/seven_seg.luc"
                 }
             },
             {
@@ -151,20 +73,8 @@
             },
             {
                 "file": {
-                    "type": "Component",
-                    "path": "Pulses/edge_detector.luc"
-                }
-            },
-            {
-                "file": {
                     "type": "DiskFile",
-                    "path": "source/multi_seven_seg.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
-                    "path": "source/seven_segment_encoder.luc"
+                    "path": "source/pn_gen.luc"
                 }
             },
             {
@@ -176,31 +86,85 @@
             {
                 "file": {
                     "type": "DiskFile",
-                    "path": "source/mux_2_32bit.luc"
+                    "path": "source/game_regfiles.luc"
                 }
             },
             {
                 "file": {
                     "type": "DiskFile",
-                    "path": "source/mux_4_32bit.luc"
+                    "path": "source/game_datapath.luc"
                 }
             },
             {
                 "file": {
                     "type": "DiskFile",
-                    "path": "source/stacker.luc"
+                    "path": "source/variable_timer.luc"
                 }
             },
             {
                 "file": {
-                    "type": "Component",
-                    "path": "Miscellaneous/counter.luc"
+                    "type": "DiskFile",
+                    "path": "source/bitmask.luc"
                 }
             },
             {
                 "file": {
-                    "type": "Component",
-                    "path": "Miscellaneous/decoder.luc"
+                    "type": "DiskFile",
+                    "path": "source/fa.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/rca.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/adder.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/mux_4.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/compare.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/boolean.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/x_bit_left_shifter.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/mux_2.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/x_bit_right_shifter.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/shifter.luc"
                 }
             }
         ],
@@ -208,13 +172,13 @@
             {
                 "file": {
                     "type": "Component",
-                    "path": "Constraints/io_v1.acf"
+                    "path": "Constraints/io_v1_pulldown.acf"
                 }
             },
             {
                 "file": {
-                    "type": "Component",
-                    "path": "Constraints/alchitry.acf"
+                    "type": "DiskFile",
+                    "path": "constraint/alchitry.acf"
                 }
             }
         ],
