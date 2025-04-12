@@ -23,9 +23,3 @@ to be written
 to be written
 
 (includes 32-bit Arithmetic Logic Unit (ALU) for the Beta Processor)
-4. **Shifter Unit** - Supports bit shifts for division/multiplication by 2 and data manipulation.
-5. **Multiplier Unit** - Responsible for multiplication, requiring a more complex design.
-
-Each of these modules will generate its own 32-bit output, which we’ll later combine to produce a single ALU result.
-
-Consult 50.002 lab handout for more information.
