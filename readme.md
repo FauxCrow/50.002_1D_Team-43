@@ -1,21 +1,28 @@
-# 32-bit Arithmetic Logic Unit (ALU) for the Beta Processor
+# Stack Overflow
 
-In this lab, we will build a 32-bit **Arithmetic and Logic Unit (ALU)** for the Beta processor. This ALU will be essential for your 1D Project Checkoff 1 and Lab 4, where we’ll expand on it to build a complete Beta CPU.
+## Description:
 
-## Overview
+Rise to the Top. Beat the Clock. Outsmart Your Rival.
 
-The **Arithmetic Logic Unit (ALU)** is a **combinational logic device** responsible for performing arithmetic and logic operations within a CPU. Our ALU has two 32-bit inputs (`A` and `B`) and produces a 35-bit output:
-- `alu[31:0]`: The primary 32-bit result of the operation.
-- `Z`: Zero flag, indicating if the result is zero.
-- `V`: Overflow flag.
-- `N`: Negative flag.
+Battle in a 1v1 arcade challenge where precision meets speed! One misstep, and it’s joever!
 
-## ALU Modules
+*Are you up for the challenge?*
 
-To build the ALU modularly, we will create separate units for each core operation. These include:
-1. **Addition/Subtraction Unit** - Handles basic addition and subtraction.
-2. **Comparison Unit** - Used for branching by comparing values.
-3. **Boolean Unit** - Performs bitwise operations like XOR and masking.
+## How to Play:
+
+to be written
+
+## Components:
+- 1x Alchitry Au Board
+- 1x 16x16 WS2812B Matrix
+- 3x Buttons
+- 2x Yellow LEDs
+
+## FSM and Datapath:
+
+to be written
+
+(includes 32-bit Arithmetic Logic Unit (ALU) for the Beta Processor)
 4. **Shifter Unit** - Supports bit shifts for division/multiplication by 2 and data manipulation.
 5. **Multiplier Unit** - Responsible for multiplication, requiring a more complex design.
 
