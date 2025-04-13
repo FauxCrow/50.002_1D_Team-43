@@ -14,7 +14,7 @@ module alchitry_top (
     sig rst                 // reset signal
     
     const CLK_FREQ = $is_sim() ? 1000 : 10000000 // put 1000 for sim, 10000000 otherwise in hardware
-    const SLOW_CLOCK_DIV = $is_sim() ? 8 : 25 // put 8  for sim, 25 for hardware
+    const SLOW_CLOCK_DIV = $is_sim() ? 7 : 25 // put 8  for sim, 25 for hardware -- 24 was pretty good
     
     .clk(clk) {
         // The reset conditioner is used to synchronize the reset signal to the FPGA
@@ -23,6 +23,9 @@ module alchitry_top (
         
         button_conditioner btn_cond_p1 (#CLK_FREQ(CLK_FREQ))
         edge_detector edge_dt_btn_p1 (#RISE(1), #FALL(0))
+        
+        button_conditioner btn_cond_p2 (#CLK_FREQ(CLK_FREQ))
+        edge_detector edge_dt_btn_p2 (#RISE(1), #FALL(0))
         
         button_conditioner btn_cond_reset (#CLK_FREQ(CLK_FREQ))
         edge_detector edge_dt_btn_reset (#RISE(1), #FALL(0))
@@ -44,26 +47,42 @@ module alchitry_top (
         io_segment = 8h00
         io_select = 4h0       
         io_led = 3x{{8h00}}
-
+        
         //player 1 inputs -- bottom
         btn_cond_p1.in=io_button[2] //to reduce the bouncing effects of your button 
-        edge_dt_btn_reset.in=btn_cond_p1.out //get the edge of button press
-        main_beta.p1_button = edge_dt_btn_reset.out
+        edge_dt_btn_p1.in=btn_cond_p1.out //get the edge of button press
+        main_beta.p1_button = edge_dt_btn_p1.out
+        
+        //player 2 inputs -- 
+        btn_cond_p2.in=io_button[1] //to reduce the bouncing effects of your button 
+        edge_dt_btn_p2.in=btn_cond_p2.out //get the edge of button press
+        main_beta.p2_button = edge_dt_btn_p2.out
         
         //reset inputs -- top
         btn_cond_reset.in=io_button[0] //to reduce the bouncing effects of your button 
-        edge_dt_btn_p1.in=btn_cond_reset.out //get the edge of button press
-        main_beta.reset_button = edge_dt_btn_p1.out
+        edge_dt_btn_reset.in=btn_cond_reset.out //get the edge of button press
+        main_beta.reset_button = edge_dt_btn_reset.out
         
-        io_led[0] = main_beta.p1_row
-        io_led[1] = main_beta.p1_prev_row
-        io_led[2] = main_beta.level
+        
+        
+        if (main_beta.turn){
+            io_led[0] = main_beta.p2_row
+            io_led[1] = main_beta.p2_prev_row
+            io_led[2] = main_beta.level
+        }
+        else{
+            io_led[0] = main_beta.p1_row
+            io_led[1] = main_beta.p1_prev_row
+            io_led[2] = main_beta.level
+        }
         
         // side LEDs
         led[0] = main_beta.debug_slowclock
-        led[1] = main_beta.direction
-        led[2] = main_beta.win
-        led[3] = main_beta.lose
-        
+        led[1] = main_beta.p1_direction
+        led[2] = main_beta.p2_direction
+        led[3] = main_beta.turn
+        led[4] = main_beta.p1_win
+        led[5] = main_beta.p2_win
+        led[6] = main_beta.both_win
     }
 }

@@ -2,8 +2,8 @@ module game_datapath #(
     SLOW_CLOCK_DIV ~ 26 : SLOW_CLOCK_DIV > 0)
 (
     input p1_button,
+    input p2_button,
     input reset_button,
-    //input p2_button,
     
     input clk,  // clock
     input rst,  // reset
@@ -11,10 +11,15 @@ module game_datapath #(
     output debug_out[32],
     output p1_row[8],
     output p1_prev_row[8],
-    output direction[1],
+    output p1_direction[1],
+    output p2_row[8],
+    output p2_prev_row[8],
+    output p2_direction[1],
     output level[5],
-    output win[1],
-    output lose[1],
+    output p1_win[1],
+    output p2_win[1],
+    output turn[1],
+    output both_win[1],
     //output p2_out[16],
     output debug_slowclock
 ) {
@@ -46,8 +51,8 @@ module game_datapath #(
         
         //pass button press signal to CU unit
         main_control_unit.p1_button = p1_button
+        main_control_unit.p2_button = p2_button
         main_control_unit.reset_button = reset_button
-        //main_control_unit.p2_button = p2_button;
         
         //Setup REGFILE unit 
         players.we = main_control_unit.we_regfile
@@ -72,7 +77,6 @@ module game_datapath #(
         case(main_control_unit.bsel){
             b00 : inputAlu_b = players.out_b
             b01 : inputAlu_b = 1 // used to add / shift 1
-            b10 : inputAlu_b = 0 // used to reset row to zero
             b11 : inputAlu_b = 60 // used to set from 00000000 to 00111100
             
             default : //necessary to init
@@ -93,19 +97,21 @@ module game_datapath #(
                 players.data = game_alu.out
         }
         
-        //for debugging
-        //  debug_out[3:0] = players.all_buttons;
-        //  debug_out[7:4] = players.out;    
-        //  debug_out = game_controlunit.debug;
-        
+        //for debugging       
         debug_out = players.timer
-        //   debug_out = vc.debug;
-        p1_row = players.row
-        p1_prev_row = players.prev_row
-        direction = players.direction
+        p1_row = players.p1_row
+        p1_prev_row = players.p1_prev_row
+        p1_direction = players.p1_direction
         level = players.level
-        win = players.win
-        lose = players.lose
+        p1_win = players.p1_win
+        p2_win= players.p2_win
+        both_win = players.both_win
+        
+        p2_row = players.p2_row
+        p2_prev_row = players.p2_prev_row
+        p2_direction = players.p2_direction
+        turn = players.turn
+        
         debug_slowclock = slow_timer.value
     }
 }

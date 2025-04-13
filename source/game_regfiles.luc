@@ -14,21 +14,23 @@ module game_regfiles (
     //debug
     output timer[32],
     output level[5],
-    output direction[1],
-    output row[8],
-    output prev_row[8],
-    output win[1],
-    output lose[1]
-    //output counter_out[16]
-    
+    output p1_direction[1],
+    output p1_row[8],
+    output p1_prev_row[8],
+    output p1_win[1],
+    output p2_win[1],
+    output both_win[1],
+    output p2_direction[1],
+    output p2_row[8],
+    output p2_prev_row[8],
+    output turn[1]
 ) 
 
 {
     .clk(clk){
         .rst(rst){
             dff p1_attributes[32](#INIT(0))
-            //dff current_counter[32](#INIT(0));
-            //dff temp_var[32](#INIT(0))
+            dff p2_attributes[32](#INIT(0))
             dff current_timer[32](#INIT(0))
         }
     }
@@ -39,15 +41,22 @@ module game_regfiles (
         if (we){
             case(write_address){
                 d0 : current_timer.d = data
-                d1 : p1_attributes.d[31:24] = data[7:0] // write to prev row
-                d2 : p1_attributes.d[23:16] = data[7:0] // write to current row
-                d3 : p1_attributes.d[13] = data[0] // write to direction
-                d4 : p1_attributes.d[4:0] = data[4:0] // write to current level
-                d5 : p1_attributes.d[8] = data[0] // temp var, for compare
-                d6 : p1_attributes.d = data // entire dff, to clear
+                d1 : p1_attributes.d[31:24] = data[7:0] // write to p1 prev row
+                d2 : p1_attributes.d[23:16] = data[7:0] // write to p1 current row
+                d3 : p1_attributes.d[13] = data[0] // write to p1 direction
+                d4 : p1_attributes.d[4:0] = data[4:0] // write to current level, stored in p1
+                d5 : p1_attributes.d[8] = data[0] // temp var, for compare, stored in p1
+                d6 : p1_attributes.d = data // entire dff, to clear p1
                 
-                d7 : p1_attributes.d[5] = data[0] // temp win
-                d8 : p1_attributes.d[6] = data[0] // temp lose
+                d7 : p1_attributes.d[5] = data[0] // temp win, stored in p1
+                d8 : p1_attributes.d[6] = data[0] // temp lose, stored in p1
+                
+                d9 : p2_attributes.d[31:24] = data[7:0] // write to p2 prev row
+                d10 : p2_attributes.d[23:16] = data[7:0] // write to p2 current row
+                d11 : p2_attributes.d[13] = data[0] // write to p2 direction
+                d12 : p2_attributes.d[0] = data[0] // write to turn, stored in p2
+                d13 : p2_attributes.d = data // entire dff, to clear p2
+                d14 : p1_attributes.d[7] = data[0]  // both win, stored in p1
             }
         }
         
@@ -55,14 +64,20 @@ module game_regfiles (
         //read port a -- goes to beta asel mux, flush all values to end
         case(read_address_a){
             d0 : out_a = current_timer.q
-            d1 : out_a = c{24x{0}, p1_attributes.q[31:24]} // prev row
-            d2 : out_a = c{24x{0}, p1_attributes.q[23:16]} // current row
-            d3 : out_a = c{31x{0}, p1_attributes.q[13]} // direction
+            d1 : out_a = c{24x{0}, p1_attributes.q[31:24]} // p1 prev row
+            d2 : out_a = c{24x{0}, p1_attributes.q[23:16]} // p1 current row
+            d3 : out_a = c{31x{0}, p1_attributes.q[13]} // p1 direction
             d4 : out_a = c{27x{0}, p1_attributes.q[4:0]} // level
             d5 : out_a = c{31x{0}, p1_attributes.q[8]} // temp var
-            d6 : out_a = p1_attributes.q // entire dff, to clear
+            d6 : out_a = p1_attributes.q // entire p1 dff, to clear
             d7 : out_a = c{31x{0}, p1_attributes.q[5]} // win
             d8 : out_a = c{31x{0}, p1_attributes.q[6]} // lose
+            d9 : out_a = c{24x{0}, p2_attributes.q[31:24]} // p2 prev row
+            d10 : out_a = c{24x{0}, p2_attributes.q[23:16]} // p2 current row
+            d11 : out_a = c{24x{0}, p2_attributes.q[13]} // p2 direction
+            d12 : out_a = c{31x{0}, p2_attributes.q[0]} // turn
+            d13 : out_a = p2_attributes.q // entire p2 dff, to clear
+            d14 : out_a = c{31x{0}, p1_attributes.q[7]} // both win
             default : out_a = 0
         }
         
@@ -75,19 +90,35 @@ module game_regfiles (
             d4 : out_b = c{27x{0}, p1_attributes.q[4:0]} // level
             d5 : out_b = c{31x{0}, p1_attributes.q[8]} // temp var
             d6 : out_b = p1_attributes.q // entire dff, to clear
+            d7 : out_b = c{31x{0}, p1_attributes.q[5]} // win
+            d8 : out_b = c{31x{0}, p1_attributes.q[6]} // lose
+            d9 : out_b = c{24x{0}, p2_attributes.q[31:24]} // p2 prev row
+            d10 : out_b = c{24x{0}, p2_attributes.q[23:16]} // p2 current row
+            d11 : out_b = c{24x{0}, p2_attributes.q[13]} // p2 direction
+            d12 : out_b = c{31x{0}, p2_attributes.q[0]} // turn
+            d13 : out_b = p2_attributes.q // entire p2 dff, to clear
+            d14 : out_b = c{31x{0}, p1_attributes.q[7]} // both win
             default : out_b = 0
         }
         
         //For debugging
         timer = current_timer.q
         
-        // Attribute Address: [31:24] previous row, [23:16] current row, [13] direction, [4:0] level
-        prev_row = p1_attributes.q[31:24]
-        row = p1_attributes.q[23:16]
-        direction = p1_attributes.q[13]
+        // P1 Attribute Address: [31:24] previous row, [23:16] current row, [13] direction, 
+        // (Shared) [4:0] level, [5] win, [6] lose
+        p1_prev_row = p1_attributes.q[31:24]
+        p1_row = p1_attributes.q[23:16]
+        p1_direction = p1_attributes.q[13]
         level = p1_attributes.q[4:0]
-        win = p1_attributes.q[5]
-        lose = p1_attributes.q[6]
-        //counter_out = current_counter.q;
+        p1_win = p1_attributes.q[5]
+        p2_win = p1_attributes.q[6]
+        both_win = p1_attributes.q[7]
+        
+        // P1 Attribute Address: [31:24] previous row, [23:16] current row, [13] direction, 
+        // (Shared) [0] turn
+        p2_prev_row = p2_attributes.q[31:24]
+        p2_row = p2_attributes.q[23:16]
+        p2_direction = p2_attributes.q[13]
+        turn = p2_attributes.q[0]
     }
 }

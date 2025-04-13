@@ -6,6 +6,7 @@ module game_cu (
     input regfile_datain[32], //direct reading of regfile data from read_address_b
     
     input p1_button,
+    input p2_button,
     input reset_button,
     
     output alufn[6],
@@ -20,28 +21,58 @@ module game_cu (
 ) {
     
     enum States {
-        CLEAR,
-        SET_PREV_ROW,
-        SET_ROW,
+        CLEAR_P1,
+        SET_PREV_ROW_P1,
+        SET_ROW_P1,
+        CLEAR_P2,
+        SET_PREV_ROW_P2,
         ADD_LEVEL,
         IDLE,
-        CHECK_DIRECTION,
-        CHECK_RIGHT_END,
-        CHANGE_RIGHT_LEFT,
-        CHANGE_LEFT_RIGHT,
-        CHECK_LEFT_END,
-        LEFT_SHIFT,
-        RIGHT_SHIFT,
-        COMPARE_NEW,
-        BRANCH_NEW,
-        BITMASK,
-        CHECK_EMPTY_ROW,
-        BRANCH_EMPTY,
+        
+        CHECK_TURN,
+        CHECK_P1_DIRECTION,
+        CHECK_P2_DIRECTION,
+        CHECK_RIGHT_END_P1,
+        CHECK_LEFT_END_P1,
+        CHANGE_RIGHT_LEFT_P1,
+        CHANGE_LEFT_RIGHT_P1,
+        CHECK_RIGHT_END_P2,
+        CHECK_LEFT_END_P2,
+        CHANGE_RIGHT_LEFT_P2,
+        CHANGE_LEFT_RIGHT_P2,
+        LEFT_SHIFT_P1,
+        RIGHT_SHIFT_P1,
+        LEFT_SHIFT_P2,
+        RIGHT_SHIFT_P2,
+        
+        CHECK_BTN_TURN_P1,
+        COMPARE_NEW_P1,
+        BRANCH_NEW_P1,
+        BITMASK_P1,
+        CHECK_EMPTY_ROW_P1,
+        BRANCH_EMPTY_P1,
+        UPDATE_TURN_TO_P2,
+        SET_ROW_P2,
+        
+        CHECK_BTN_TURN_P2,
+        COMPARE_NEW_P2,
+        BRANCH_NEW_P2,
+        BITMASK_P2,
+        CHECK_EMPTY_ROW_P2,
+        BRANCH_EMPTY_P2,
+        UPDATE_TURN_TO_P1,
         UPDATE_TOP,
         CHECK_TOP,
-        CLEAR_CURRENT,
-        WIN, 
-        LOSE,
+        CLEAR_PREV_P1,
+        CLEAR_PREV_P2,
+        UPDATE_PREV_P1,
+        UPDATE_PREV_P2,
+        CLEAR_CURRENT_P1,
+        CLEAR_CURRENT_P2,
+        
+        P1_WIN, 
+        P2_WIN,
+        BOTH_WIN,
         GAME_OVER
     }
     
@@ -75,38 +106,42 @@ module game_cu (
             case(game_fsm.q){                
                 States.IDLE:
                     if (shift_timer){
-                        game_fsm.d = States.CHECK_DIRECTION
+                        game_fsm.d = States.CHECK_TURN
                     }
                     else if (p1_button){
-                        game_fsm.d = States.COMPARE_NEW
+                        game_fsm.d = States.CHECK_BTN_TURN_P1
+                    }
+                    else if (p2_button){
+                        game_fsm.d = States.CHECK_BTN_TURN_P2
                     }
                     else if (reset_button){                 // start game
-                        game_fsm.d = States.CLEAR
+                        game_fsm.d = States.CLEAR_P1
                     }
                 
-                States.CLEAR:
+                // Setup circuit
+                States.CLEAR_P1:                             // clear p1 attributes completely
                     alufn = b000001                            // subtract
                     asel = b00                                 // p1 attributes
                     bsel = b00                                 // p1 attributes  
                     we_regfile = 1 
-                    regfile_write_address = d6               // write to current level
-                    regfile_read_address_a = d6              // read from current level 
-                    regfile_read_address_b = d6              // read from current level               
+                    regfile_write_address = d6               // write to p1 attributes
+                    regfile_read_address_a = d6              // read from p1 attributes
+                    regfile_read_address_b = d6              // read from p1 attributes            
                     
-                    game_fsm.d = States.SET_PREV_ROW
+                    game_fsm.d = States.CLEAR_P2
                 
-                States.SET_PREV_ROW: // Set prev row -- 
-                    alufn = b000000                            // add
-                    asel = b00                                 // p1 attributes
-                    bsel = b11                                 // + 60  
+                States.CLEAR_P2:                             // clear p2 attributes completely
+                    alufn = b000001                            // subtract
+                    asel = b00                                 // p2 attributes
+                    bsel = b00                                 // p2 attributes  
                     we_regfile = 1 
-                    regfile_write_address = d1               // write to prev row
-                    regfile_read_address_a = d1              // read from prev row
-                    regfile_read_address_b = d1              // read from prev row
+                    regfile_write_address = d13               // write to p2 attributes
+                    regfile_read_address_a = d13              // read from p2 attributes
+                    regfile_read_address_b = d13              // read from p2 attributes           
                     
                     game_fsm.d = States.ADD_LEVEL
                 
-                States.ADD_LEVEL:
+                States.ADD_LEVEL:                            // Start from level 1 (where level 0 is first set row)
                     alufn = b000000                            // add
                     asel = b00                                 // p1 attributes
                     bsel = b01                                 // + 1  
@@ -114,143 +149,328 @@ module game_cu (
                     regfile_write_address = d4               // write to current level
                     regfile_read_address_a = d4              // read from current level               
                     
-                    game_fsm.d = States.SET_ROW
+                    game_fsm.d = States.SET_PREV_ROW_P1
                 
-                States.SET_ROW:                             // Set current row as previous row
+                States.SET_PREV_ROW_P1:                      // set p1 row 0 as '00111100'
+                    alufn = b000000                            // add
+                    asel = b00                                 // p1 attributes
+                    bsel = b11                                 // + 60  
+                    we_regfile = 1 
+                    regfile_write_address = d1               // write to p1 prev row
+                    regfile_read_address_a = d1              // read from p1 prev row
+                    
+                    game_fsm.d = States.SET_PREV_ROW_P2
+                
+                States.SET_PREV_ROW_P2:                      // set p2 row 0 as '00111100'
+                    alufn = b000000                            // add
+                    asel = b00                                 // p2 attributes
+                    bsel = b11                                 // + 60  
+                    we_regfile = 1 
+                    regfile_write_address = d9               // write to p2 prev row
+                    regfile_read_address_a = d9              // read from p2 prev row
+                    
+                    game_fsm.d = States.SET_ROW_P1
+                
+                States.SET_ROW_P1:                           // Set p1 current row as p1 previous row
                     alufn = b000000                            // add
                     asel = b00                                 // p1 attributes
                     bsel = b00                                 // p1 attributes  
                     we_regfile = 1 
-                    regfile_write_address = d2               // write to current row
-                    regfile_read_address_a = d2              // read from current row
-                    regfile_read_address_b = d1              // read from prev row
+                    regfile_write_address = d2               // write to p1 current row
+                    regfile_read_address_a = d2              // read from p1 current row == 0
+                    regfile_read_address_b = d1              // read from p1 prev row
                     
                     game_fsm.d = States.IDLE
                 
-                States.CHECK_DIRECTION: 
-                    regfile_read_address_b = d3              // read from direction
-                    if (regfile_datain[0]){                    // if bit 0 (direction) is 1, we're going right
-                        game_fsm.d = States.CHECK_RIGHT_END
+                // slow clock activate
+                States.CHECK_TURN:                           // Check whose turn it is currently
+                    regfile_read_address_b = d12               // read from current turn
+                    if (regfile_datain[0]){                    // if bit 0 (turn) is 1, it's player 2's turn
+                        game_fsm.d = States.CHECK_P2_DIRECTION
                     }
-                    else{                                       // if bit 0 (direction) is 0, we're going left
-                        game_fsm.d = States.CHECK_LEFT_END
-                    }
-                
-                States.CHECK_RIGHT_END:
-                    regfile_read_address_b = d2                 // read from current row
-                    if (regfile_datain[0]){                    // if bit 0 (current row) is 1, we're changing direction
-                        game_fsm.d = States.CHANGE_RIGHT_LEFT
-                    }
-                    else{                                       // if bit 0 (direction) is 0, we're going continuing
-                        game_fsm.d = States.RIGHT_SHIFT
+                    else{                                       // if bit 0 (turn) is 0, it's player 1's turn
+                        game_fsm.d = States.CHECK_P1_DIRECTION
                     }
                 
-                States.CHANGE_RIGHT_LEFT:                    // swap from 1 to 0
+                // Player 1 shift circuit
+                States.CHECK_P1_DIRECTION:                   // Check p1's direction
+                    regfile_read_address_b = d3                // read from p1 direction
+                    if (regfile_datain[0]){                    // if bit 0 (direction) is 1, check right direction
+                        game_fsm.d = States.CHECK_RIGHT_END_P1
+                    }
+                    else{                                       // if bit 0 (direction) is 0, check left direction
+                        game_fsm.d = States.CHECK_LEFT_END_P1
+                    }
+                
+                States.CHECK_RIGHT_END_P1:                   // Check p1 current row (if block reach right end)
+                    regfile_read_address_b = d2                // read from p1 current row
+                    if (regfile_datain[0]){                    // if bit 0 (rightmost bit) is 1, swap direction
+                        game_fsm.d = States.CHANGE_RIGHT_LEFT_P1
+                    }
+                    else{                                      // if bit 0 (rightmost bit) is 0, continue right
+                        game_fsm.d = States.RIGHT_SHIFT_P1
+                    }
+                
+                States.CHANGE_RIGHT_LEFT_P1:                 // swap p1 direction from 1 (right) to 0 (left)
                     alufn = b000001                            // subtract
                     asel = b00                                 // p1 attributes
                     bsel = b01                                 // - 1  
                     we_regfile = 1 
-                    regfile_write_address = d3               // write to direction
-                    regfile_read_address_a = d3              // read from direction
-                    regfile_read_address_b = d3              // read from direction
+                    regfile_write_address = d3               // write to p1 direction
+                    regfile_read_address_a = d3              // read from p1 direction
                     
-                    game_fsm.d = States.LEFT_SHIFT
+                    game_fsm.d = States.LEFT_SHIFT_P1
                 
-                
-                States.CHECK_LEFT_END:
-                    regfile_read_address_b = d2                 // read from current row
-                    if (regfile_datain[7]){                    // if bit 7 (current row) is 1, we're changing direction
-                        game_fsm.d = States.CHANGE_LEFT_RIGHT
+                States.CHECK_LEFT_END_P1:                 // Check p1 current row (if block reach left end)
+                    regfile_read_address_b = d2                // read from p1 current row
+                    if (regfile_datain[7]){                    // if bit 7 (leftmost bit) is 1, swap direction
+                        game_fsm.d = States.CHANGE_LEFT_RIGHT_P1
                     }
-                    else{                                       // if bit 0 (direction) is 0, we're going continuing
-                        game_fsm.d = States.LEFT_SHIFT
+                    else{                                      // if bit 7 (direction) is 0, continue left
+                        game_fsm.d = States.LEFT_SHIFT_P1
                     }
                 
-                States.CHANGE_LEFT_RIGHT:                    // swap from 0 to 1
+                States.CHANGE_LEFT_RIGHT_P1:               // swap p1 direction from 0 (left) to 1 (right)
                     alufn = b000000                            // add
                     asel = b00                                 // p1 attributes
                     bsel = b01                                 // + 1  
                     we_regfile = 1 
-                    regfile_write_address = d3               // write to direction
-                    regfile_read_address_a = d3              // read from direction
-                    regfile_read_address_b = d3              // read from direction
+                    regfile_write_address = d3               // write to p1 direction
+                    regfile_read_address_a = d3              // read from p1 direction
                     
-                    game_fsm.d = States.RIGHT_SHIFT
+                    game_fsm.d = States.RIGHT_SHIFT_P1
                 
-                States.LEFT_SHIFT:                            // 1 bit shift left
+                States.LEFT_SHIFT_P1:                        // 1 bit shift left to p1 current row
+                    alufn = b100000                            // left shift
+                    asel = b00                                 // p1 attributes
+                    bsel = b01                                 // 1  
+                    we_regfile = 1 
+                    regfile_write_address = d2               // write to p1 current row
+                    regfile_read_address_a = d2              // read from p1 current row
+                    
+                    game_fsm.d = States.IDLE
+                
+                States.RIGHT_SHIFT_P1:                       // 1 bit shift right to p1 current row
+                    alufn = b100001                            // right shift
+                    asel = b00                                 // p1 attributes
+                    bsel = b01                                 // 1  
+                    we_regfile = 1 
+                    regfile_write_address = d2               // write to p1 current row
+                    regfile_read_address_a = d2              // read from p1 current row
+                    
+                    game_fsm.d = States.IDLE
+                
+                // Player 2 shift circuit
+                States.CHECK_P2_DIRECTION:                   // Check p2's direction 
+                    regfile_read_address_b = d11               // read from p2 direction
+                    if (regfile_datain[0]){                    // if bit 0 (direction) is 1, we're going right
+                        game_fsm.d = States.CHECK_RIGHT_END_P2
+                    }
+                    else{                                       // if bit 0 (direction) is 0, we're going left
+                        game_fsm.d = States.CHECK_LEFT_END_P2
+                    }
+                
+                States.CHECK_RIGHT_END_P2:                   // Check p2 current row (if block reach right end)
+                    regfile_read_address_b = d10               // read from p2 current row
+                    if (regfile_datain[0]){                    // if bit 0 (rightmost bit) is 1, swap direction
+                        game_fsm.d = States.CHANGE_RIGHT_LEFT_P2
+                    }
+                    else{                                      // if bit 0 (rightmost bit) is 0, continue right
+                        game_fsm.d = States.RIGHT_SHIFT_P2
+                    }
+                
+                States.CHANGE_RIGHT_LEFT_P2:                 // swap p2 direction from 1 (right) to 0 (left)
+                    alufn = b000001                            // subtract
+                    asel = b00                                 // p2 attributes
+                    bsel = b01                                 // - 1  
+                    we_regfile = 1 
+                    regfile_write_address = d11               // write to p2 direction
+                    regfile_read_address_a = d11              // read from p2 direction
+                    
+                    game_fsm.d = States.LEFT_SHIFT_P2
+                
+                States.CHECK_LEFT_END_P2:                   // Check p2 current row (if block reach left end)
+                    regfile_read_address_b = d10               // read from p2 current row
+                    if (regfile_datain[7]){                    // if bit 7 (leftmost bit) is 1, swap direction
+                        game_fsm.d = States.CHANGE_LEFT_RIGHT_P2
+                    }
+                    else{                                      // if bit 7 (leftmost bit) is 0, continue left
+                        game_fsm.d = States.LEFT_SHIFT_P2
+                    }
+                
+                States.CHANGE_LEFT_RIGHT_P2:               // swap p2 direction from 0 (left) to 1 (right)
+                    alufn = b000000                            // add
+                    asel = b00                                 // p2 attributes
+                    bsel = b01                                 // + 1  
+                    we_regfile = 1 
+                    regfile_write_address = d11               // write to p2 direction
+                    regfile_read_address_a = d11              // read from p2 direction
+                    
+                    game_fsm.d = States.RIGHT_SHIFT_P2
+                
+                States.LEFT_SHIFT_P2:                        // 1 bit shift left to p2 current row
                     alufn = b100000                           // left shift
-                    asel = b00                                 // p1 attributes
+                    asel = b00                                 // p2 attributes
                     bsel = b01                                 // 1  
                     we_regfile = 1 
-                    regfile_write_address = d2               // write to current row
-                    regfile_read_address_a = d2              // read from current row
-                    regfile_read_address_b = d2              // read from current row
+                    regfile_write_address = d10              // write to p2 current row
+                    regfile_read_address_a = d10              // read from p2 current row
                     
                     game_fsm.d = States.IDLE
                 
-                States.RIGHT_SHIFT:                           // 1 bit shift right
-                    alufn = b100001                           // right shift
-                    asel = b00                                 // p1 attributes
+                States.RIGHT_SHIFT_P2:                       // 1 bit shift right to p2 current row
+                    alufn = b100001                            // right shift
+                    asel = b00                                 // p2 attributes
                     bsel = b01                                 // 1  
                     we_regfile = 1 
-                    regfile_write_address = d2               // write to current row
-                    regfile_read_address_a = d2              // read from current row
-                    regfile_read_address_b = d2              // read from current row
+                    regfile_write_address = d10               // write to p2 current row
+                    regfile_read_address_a = d10              // read from p2 current row
                     
                     game_fsm.d = States.IDLE
                 
-                States.COMPARE_NEW:
-                    alufn = b110011                           // CMPEQ
-                    asel = b00                                 // p1 attributes
-                    bsel = b00                                 // p1 attributes  
-                    we_regfile = 1
-                    regfile_write_address = d5               // write to temp var
-                    regfile_read_address_a = d1              // read from prev row
-                    regfile_read_address_b = d2              // read from current row
-                    
-                    game_fsm.d = States.BRANCH_NEW
-                
-                States.BRANCH_NEW:
-                    regfile_read_address_b = d5                 // read from temp reg
-                    if (regfile_datain[0]){                    // if bit 0 (temp) is 1, new = prev
-                        game_fsm.d = States.CHECK_EMPTY_ROW
+                // P1 compare circuit
+                States.CHECK_BTN_TURN_P1:                    // Check if is currently p1's turn
+                    regfile_read_address_b = d12               // read from turn
+                    if (regfile_datain[0]){                    // if bit 0 (turn) is 1 (p2), back to idle
+                        game_fsm.d = States.IDLE
                     }
-                    else{                                       // if bit 0 (temp) is 0, we bitmask
-                        game_fsm.d = States.BITMASK
+                    else{                                       // if bit 0 (turn) is 0 (p1), continue
+                        game_fsm.d = States.COMPARE_NEW_P1
                     }
                 
-                States.BITMASK:
-                    alufn = b000100                           // BM (AND)
-                    asel = b00                                 // p1 attributes
-                    bsel = b00                                 // p1 attributes  
-                    we_regfile = 1
-                    regfile_write_address = d1               // write to prev row
-                    regfile_read_address_a = d1              // read from prev row
-                    regfile_read_address_b = d2              // read from current row
-                    
-                    game_fsm.d = States.CHECK_EMPTY_ROW
-                
-                States.CHECK_EMPTY_ROW:
+                States.COMPARE_NEW_P1:                       // Compare if p1 prev row and current row identical
                     alufn = b110011                            // CMPEQ
                     asel = b00                                 // p1 attributes
-                    bsel = b10                                 // = 0  
+                    bsel = b00                                 // p1 attributes  
                     we_regfile = 1
                     regfile_write_address = d5               // write to temp var
                     regfile_read_address_a = d1              // read from prev row
+                    regfile_read_address_b = d2              // read from current row
                     
-                    game_fsm.d = States.BRANCH_EMPTY
+                    game_fsm.d = States.BRANCH_NEW_P1
                 
-                States.BRANCH_EMPTY:
-                    regfile_read_address_b = d5                 // read from temp reg
-                    if (regfile_datain[0]){                    // if bit 0 (temp) is 1, prev = 0, end loser
-                        game_fsm.d = States.LOSE
+                States.BRANCH_NEW_P1:                       // Branch based on comparison results
+                    regfile_read_address_b = d5                // read from temp reg
+                    if (regfile_datain[0]){                    // if bit 0 (temp) is 1 (same), skip bitmask
+                        game_fsm.d = States.CHECK_EMPTY_ROW_P1
                     }
-                    else{                                       // if bit 0 (direction) is 0, we update top
+                    else{                                      // if bit 0 (temp) is 0 (different), bitmask
+                        game_fsm.d = States.BITMASK_P1
+                    }
+                
+                States.BITMASK_P1:                          // Keep overlap between p1 current and previous row
+                    alufn = b000100                            // BM (AND)
+                    asel = b00                                 // p1 attributes
+                    bsel = b00                                 // p1 attributes  
+                    we_regfile = 1
+                    regfile_write_address = d2               // write to p1 current row
+                    regfile_read_address_a = d1              // read from p1 prev row
+                    regfile_read_address_b = d2              // read from p1 current row
+                    
+                    game_fsm.d = States.CHECK_EMPTY_ROW_P1
+                
+                States.CHECK_EMPTY_ROW_P1:                   // Check if p1 current row is now empty
+                    alufn = b110011                            // CMPEQ
+                    asel = b01                                 // 0
+                    bsel = b00                                 // p1 attributes 
+                    we_regfile = 1
+                    regfile_write_address = d5               // write to temp var
+                    regfile_read_address_b = d2              // read from p1 current row
+                    
+                    game_fsm.d = States.BRANCH_EMPTY_P1
+                
+                States.BRANCH_EMPTY_P1:                      // Branch based on empty check results
+                    regfile_read_address_b = d5                // read from temp reg
+                    if (regfile_datain[0]){                    // if bit 0 (temp) is 1 (prev = 0), end p1 loser
+                        game_fsm.d = States.P2_WIN
+                    }
+                    else{                                       // if bit 0 (temp) is 0 (not 0), now p2 turn
+                        game_fsm.d = States.UPDATE_TURN_TO_P2
+                    }
+                
+                States.UPDATE_TURN_TO_P2:                    // Change p1 turn to p2 turn
+                    alufn = b000000                            // add
+                    asel = b00                                 // p2 attributes
+                    bsel = b01                                 // + 1
+                    we_regfile = 1 
+                    regfile_write_address = d12               // write to turn
+                    regfile_read_address_a = d12              // read from turn
+                    
+                    game_fsm.d = States.SET_ROW_P2
+                
+                States.SET_ROW_P2:                           // Set p2 current row as p2 previous row
+                    alufn = b000000                            // add
+                    asel = b00                                 // p2 attributes
+                    bsel = b00                                 // p2 attributes  
+                    we_regfile = 1 
+                    regfile_write_address = d10              // write to p2 current row
+                    regfile_read_address_a = d10             // read from p2 current row == 0
+                    regfile_read_address_b = d9              // read from p2 prev row
+                    
+                    game_fsm.d = States.IDLE
+                
+                // P2 compare circuit
+                States.CHECK_BTN_TURN_P2:                    // Check if is currently p2's turn
+                    regfile_read_address_b = d12                // read from turn
+                    if (regfile_datain[0]){                    // if bit 0 (turn) is 1, continue
+                        game_fsm.d = States.COMPARE_NEW_P2
+                    }
+                    else{                                       // if bit 0 (turn) is 0, return to idle
+                        game_fsm.d = States.IDLE
+                    }
+                
+                States.COMPARE_NEW_P2:                       // Compare if p2 prev row and current row identical
+                    alufn = b110011                           // CMPEQ
+                    asel = b00                                 // p2 attributes
+                    bsel = b00                                 // p2 attributes  
+                    we_regfile = 1
+                    regfile_write_address = d5                // write to temp var
+                    regfile_read_address_a = d9               // read from p2 prev row
+                    regfile_read_address_b = d10              // read from p2 current row
+                    
+                    game_fsm.d = States.BRANCH_NEW_P2
+                
+                States.BRANCH_NEW_P2:                         // Branch based on comparison results
+                    regfile_read_address_b = d5                 // read from temp reg
+                    if (regfile_datain[0]){                     // if bit 0 (temp) is 1 (same), skip bitmask
+                        game_fsm.d = States.CHECK_EMPTY_ROW_P2
+                    }
+                    else{                                       // if bit 0 (temp) is 1 (different), we bitmask
+                        game_fsm.d = States.BITMASK_P2
+                    }
+                
+                States.BITMASK_P2:                          // Keep overlap between p2 current and previous row
+                    alufn = b000100                           // BM (AND)
+                    asel = b00                                // p2 attributes
+                    bsel = b00                                // p2 attributes  
+                    we_regfile = 1
+                    regfile_write_address = d10               // write to p2 current row
+                    regfile_read_address_a = d9               // read from p2 prev row
+                    regfile_read_address_b = d10              // read from p2 current row
+                    
+                    game_fsm.d = States.CHECK_EMPTY_ROW_P2
+                
+                States.CHECK_EMPTY_ROW_P2:                   // Check if p2 current row is now empty
+                    alufn = b110011                            // CMPEQ
+                    asel = b01                                 // 0
+                    bsel = b00                                 // p2 attributes 
+                    we_regfile = 1
+                    regfile_write_address = d5               // write to temp var
+                    regfile_read_address_b = d10              // read from p2 current row
+                    
+                    game_fsm.d = States.BRANCH_EMPTY_P2
+                
+                States.BRANCH_EMPTY_P2:                      // Branch based on empty check results
+                    regfile_read_address_b = d5                 // read from temp reg
+                    if (regfile_datain[0]){                     // if bit 0 (temp) is 1, prev = 0, end p2 loser
+                        game_fsm.d = States.P1_WIN
+                    }
+                    else{                                       // if bit 0 (direction) is 0, update top
                         game_fsm.d = States.UPDATE_TOP
                     }
                 
-                States.UPDATE_TOP:
-                    alufn = b000000                           // ADD
+                States.UPDATE_TOP:                           // Set to next level
+                    alufn = b000000                            // ADD
                     asel = b00                                 // p1 attributes
                     bsel = b01                                 // + 1  
                     we_regfile = 1
@@ -259,16 +479,60 @@ module game_cu (
                     
                     game_fsm.d = States.CHECK_TOP
                 
-                States.CHECK_TOP:
+                States.CHECK_TOP:                             // Check if has finished last level
                     regfile_read_address_b = d4                 // read from current level
                     if (regfile_datain[4:0] == b10000){         // if current level = 16, end winner 
-                        game_fsm.d = States.WIN
+                        game_fsm.d = States.BOTH_WIN
                     }
                     else{                                       // if not, setup for next level
-                        game_fsm.d = States.CLEAR_CURRENT
+                        game_fsm.d = States.CLEAR_PREV_P1
                     }
                 
-                States.CLEAR_CURRENT:
+                States.CLEAR_PREV_P1:                        // clear p1 prev row completely
+                    alufn = b000001                            // subtract
+                    asel = b00                                 // p1 attributes
+                    bsel = b00                                 // p1 attributes  
+                    we_regfile = 1 
+                    regfile_write_address = d1               // write to p1 prev row
+                    regfile_read_address_a = d1              // read from p1 prev row
+                    regfile_read_address_b = d1              // read from p1 prev row           
+                    
+                    game_fsm.d = States.CLEAR_PREV_P2
+                
+                States.CLEAR_PREV_P2:                        // clear p2 prev row completely
+                    alufn = b000001                            // subtract
+                    asel = b00                                 // p2 attributes
+                    bsel = b00                                 // p2 attributes  
+                    we_regfile = 1 
+                    regfile_write_address = d9               // write to p2 prev row
+                    regfile_read_address_a = d9              // read from p2 prev row
+                    regfile_read_address_b = d9              // read from p2 prev row           
+                    
+                    game_fsm.d = States.UPDATE_PREV_P1
+                
+                States.UPDATE_PREV_P1:                       // set p1 prev row as p1 current row
+                    alufn = b000000                            // add
+                    asel = b00                                 // p1 attributes
+                    bsel = b00                                 // p1 attributes  
+                    we_regfile = 1 
+                    regfile_write_address = d1               // write to p1 prev row
+                    regfile_read_address_a = d1              // read from p1 prev row
+                    regfile_read_address_b = d2              // read from p1 current row           
+                    
+                    game_fsm.d = States.UPDATE_PREV_P2
+                
+                States.UPDATE_PREV_P2:                       // set p2 prev row as p2 current row
+                    alufn = b000000                            // add
+                    asel = b00                                 // p2 attributes
+                    bsel = b00                                 // p2 attributes  
+                    we_regfile = 1 
+                    regfile_write_address = d9               // write to p2 prev row
+                    regfile_read_address_a = d9              // read from p2 prev row
+                    regfile_read_address_b = d10              // read from p2 current row           
+                    
+                    game_fsm.d = States.CLEAR_CURRENT_P1
+                
+                States.CLEAR_CURRENT_P1:                     // reset p1 current row as 0
                     alufn = b000001                            // subtract
                     asel = b00                                 // p1 attributes
                     bsel = b00                                 // p1 attributes  
@@ -277,35 +541,66 @@ module game_cu (
                     regfile_read_address_a = d2              // read from current row
                     regfile_read_address_b = d2              // read from current row               
                     
-                    game_fsm.d = States.SET_ROW
+                    game_fsm.d = States.CLEAR_CURRENT_P2
                 
-                States.WIN:
+                States.CLEAR_CURRENT_P2:                     // reset p2 current row as 0
+                    alufn = b000001                            // subtract
+                    asel = b00                                 // p2 attributes
+                    bsel = b00                                 // p2 attributes  
+                    we_regfile = 1 
+                    regfile_write_address = d10               // write to current row
+                    regfile_read_address_a = d10              // read from current row
+                    regfile_read_address_b = d10              // read from current row               
+                    
+                    game_fsm.d = States.UPDATE_TURN_TO_P1
+                
+                States.UPDATE_TURN_TO_P1:                    // Change p2 turn to p1 turn
+                    alufn = b000001                            // sub
+                    asel = b00                                 // p1 attributes
+                    bsel = b01                                 // - 1
+                    we_regfile = 1 
+                    regfile_write_address = d12                // write to turn
+                    regfile_read_address_a = d12               // read from turn
+                    
+                    game_fsm.d = States.SET_ROW_P1
+                
+                States.P1_WIN:
                     // alu_out_sel = b01           //P1 winning signal, code for when we have matrix
                     
                     alufn = b000000                            // add
                     asel = b00                                 // p1 attributes
                     bsel = b01                                 // + 1  
                     we_regfile = 1 
-                    regfile_write_address = d7               // write to win
+                    regfile_write_address = d7               // write to p1 win
                     regfile_read_address_a = d7              // read from current row
                     
                     game_fsm.d = States.GAME_OVER 
                 
-                States.LOSE:
+                States.P2_WIN:
                     //alu_out_sel = b10           //P1 losing signal, code for when we have matrix
                     
                     alufn = b000000                            // add
                     asel = b00                                 // p1 attributes
                     bsel = b01                                 // + 1  
                     we_regfile = 1 
-                    regfile_write_address = d8               // write to lose 
+                    regfile_write_address = d8               // write to p2 win 
                     regfile_read_address_a = d8              // read from current row
+                    
+                    game_fsm.d = States.GAME_OVER 
+                
+                States.BOTH_WIN:
+                    alufn = b000000                            // add
+                    asel = b00                                 // p1 attributes
+                    bsel = b01                                 // + 1  
+                    we_regfile = 1 
+                    regfile_write_address = d14               // write to both win
+                    regfile_read_address_a = d14              // read from current row
                     
                     game_fsm.d = States.GAME_OVER 
                 
                 States.GAME_OVER:                            // loops until reset button hit
                     if (reset_button) {
-                        game_fsm.d = States.CLEAR
+                        game_fsm.d = States.CLEAR_P1
                     } 
                     else {
                         game_fsm.d = States.GAME_OVER

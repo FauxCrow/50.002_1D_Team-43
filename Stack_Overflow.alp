@@ -67,12 +67,6 @@
             },
             {
                 "file": {
-                    "type": "Component",
-                    "path": "Conditioning/button_conditioner.luc"
-                }
-            },
-            {
-                "file": {
                     "type": "DiskFile",
                     "path": "source/pn_gen.luc"
                 }
@@ -93,12 +87,6 @@
                 "file": {
                     "type": "DiskFile",
                     "path": "source/game_datapath.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
-                    "path": "source/variable_timer.luc"
                 }
             },
             {
@@ -165,6 +153,18 @@
                 "file": {
                     "type": "DiskFile",
                     "path": "source/shifter.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/button_conditioner.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/ws2812b_driver.luc"
                 }
             }
         ],
