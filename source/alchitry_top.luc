@@ -82,29 +82,29 @@ module alchitry_top (
             io_led[0] = main_beta.p2_row
             io_led[1] = main_beta.p2_prev_row
             io_led[2] = main_beta.level
-            p1_led = 0
-            p2_led = 1
         }
         else{
             io_led[0] = main_beta.p1_row
             io_led[1] = main_beta.p1_prev_row
             io_led[2] = main_beta.level
-            p1_led = 1
-            p2_led = 0
         }
         
         // once win signal is thrown, change what is displayed to winning LED lights
-        if (main_beta.p1_win){
-            p1_led = 1
-            p2_led = 0
+        if (main_beta.p1_win) {
+            p1_led = main_beta.p1_win
+            p2_led = ~main_beta.p1_win
         }
-        else if (main_beta.p2_win){
-            p1_led = 0
-            p2_led = 1
+        else if (main_beta.p2_win) {
+            p1_led = ~main_beta.p2_win
+            p2_led = main_beta.p2_win
         }
-        else if (main_beta.both_win){
-            p1_led = 1
-            p2_led = 1
+        else if (main_beta.both_win) {
+            p1_led = main_beta.both_win
+            p2_led = main_beta.both_win
+        }
+        else {
+            p1_led = ~main_beta.turn
+            p2_led = main_beta.turn
         }
         
         // setup matrix display
@@ -116,10 +116,6 @@ module alchitry_top (
         display.level = main_beta.level
         
         matrix_data = display.data
-        
-        // turn display LEDs
-        p1_led = ~main_beta.turn
-        p2_led = main_beta.turn
         
         // side LEDs -- debug
         led[0] = main_beta.debug_slowclock

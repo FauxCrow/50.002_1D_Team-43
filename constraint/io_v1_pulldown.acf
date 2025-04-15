@@ -54,7 +54,7 @@ PINOUT(V1), STANDARD(LVCMOS33) {
         pin io_button[1] C46
         pin io_button[2] C43
         pin io_button[3] B24
-        pin io_button[4] B27
+        pin io_button[4] B30
         
         pin p1_button B23
         pin p2_button C49
@@ -75,7 +75,7 @@ PINOUT(V1), STANDARD(LVCMOS33) {
     pin io_segment[6] A2
     pin io_segment[7] A49
     
-    pin matrix_data B30
+    pin matrix_data B27
     pin p1_led C42
     pin p2_led C45
 }
