@@ -148,6 +148,12 @@
                     "type": "DiskFile",
                     "path": "source/display.luc"
                 }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/static_mode.luc"
+                }
             }
         ],
         "constraintFiles": [

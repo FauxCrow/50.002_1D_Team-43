@@ -9,12 +9,12 @@ module alchitry_top (
     output io_select[4],        // Digit select on IO Shield
     input io_button[5],      // 5 buttons on IO Shield
     input io_dip[3][8],       // DIP switches on IO Shield
-    output matrix_data,
-    input p1_button,
-    input p2_button,
-    input reset_button,
-    output p1_led,
-    output p2_led
+    input p1_button[1],
+    input p2_button[1],
+    input reset_button[1],
+    output p1_led[1],
+    output p2_led[1],
+    output data
 ) {
     sig rst                 // reset signal
     
@@ -42,6 +42,9 @@ module alchitry_top (
         .rst(rst){
             game_datapath main_beta(#SLOW_CLOCK_DIV(SLOW_CLOCK_DIV))
             display display(.io_button(io_button), .io_dip(io_dip), 
+                #COLUMN_DIMENSION(COLUMN_DIMENSION), #ROW_DIMENSION(ROW_DIMENSION),
+                #PIXEL_COUNT(PIXEL_COUNT))
+            static_mode static_mode(.io_button(io_button), .io_dip(io_dip), 
                 #COLUMN_DIMENSION(COLUMN_DIMENSION), #ROW_DIMENSION(ROW_DIMENSION),
                 #PIXEL_COUNT(PIXEL_COUNT))
         }
@@ -115,7 +118,11 @@ module alchitry_top (
         display.p2_curr_row = main_beta.p2_row
         display.level = main_beta.level
         
-        matrix_data = display.data
+        //data = display.data
+        
+        //temp
+        static_mode.p1_button = p1_button
+        data = static_mode.data
         
         // side LEDs -- debug
         led[0] = main_beta.debug_slowclock

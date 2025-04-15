@@ -1,0 +1,126 @@
+module static_mode#(
+    COLUMN_DIMENSION = 16d16 : COLUMN_DIMENSION > 0,
+    ROW_DIMENSION = 16d16 : ROW_DIMENSION > 0,
+    PIXEL_COUNT = 16d256 : PIXEL_COUNT > 0,
+    BUFFER_SIZE = 1024 : BUFFER_SIZE > 0 // ensure this value is larger than PIXEL_COUNT * $clog2(COLOR_ENCODING)
+) (
+    input clk,              // 100MHz clock
+    input rst,            // reset button (active low)
+    output led[8],          // 8 user controllable LEDs
+    output io_led[3][8],    // LEDs on IO Shield
+    output io_segment[8],   // 7-segment LEDs on IO Shield
+    output io_select[4],    // Digit select on IO Shield
+    input io_button[5],     // 5 buttons on IO Shield
+    input io_dip[3][8],      // DIP switches on IO Shield
+    input p1_button[1],
+    output data
+) {
+    
+    // GREEN (00), BLUE (10), RED (01), OFF (00)
+    const COLOR_ENCODING = {24h0000FF, 24hFF0000, 24h00FF00, 24h0}    
+    
+    sig pixel_address[BUFFER_SIZE]
+    
+    const ENCODING_AMOUNT = $width(COLOR_ENCODING, 0)
+    sig current_pixel_color_encoding[$clog2(ENCODING_AMOUNT)]
+    
+    const CLK_FREQ = $is_sim() ? 1000 : 100000000
+    index_reverser index_reverser(#COLUMN_DIMENSION(COLUMN_DIMENSION), #SIZE($clog2(PIXEL_COUNT))) 
+    
+    .clk(clk){
+        button_conditioner clear_button(#CLK_FREQ(CLK_FREQ), .in(io_button[1]))
+        edge_detector clear_button_edge(#RISE(1), #FALL(0), .in(clear_button.out))
+        
+        .rst(rst){
+            dff on_off_toggle
+            dff led_encoding[BUFFER_SIZE](#INIT(2))
+            dff matrix_values[512](#INIT(0))
+        }
+        
+    }
+    
+    const DISPLAY = $reverse({
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b11, 2b11, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b01, 2b01, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00,
+            2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00,2b00,
+            2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00,2b00,
+            2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00,
+            2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00,
+            2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00, 2b00, 2b00,2b00, 
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b01, 2b10, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00, 
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00
+        })
+    
+    
+    ws2812b_driver driver(#PIXEL_COUNT(PIXEL_COUNT), .rst(rst), .clk(clk))
+    
+    always {
+        
+        led = 8h00            
+        io_led = 3x{{8h00}}
+        io_segment = 8hff
+        io_select = 4hf
+        data = 0
+        
+        on_off_toggle.d = on_off_toggle.q
+        led_encoding.d = led_encoding.q
+        matrix_values.d = matrix_values.q
+        
+        driver.update = on_off_toggle.q 
+        driver.clear = 0
+        
+        
+        if (clear_button_edge.out){
+            driver.clear = 1             
+            on_off_toggle.d = ~on_off_toggle.q // toggle the on-off to dictate update
+        }
+        if (p1_button){
+            matrix_values.d[31 + (32 * (15 - 1)):16 + (32 * (15 - 1))] = c{
+                0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0 }
+                matrix_values.d[15 + (32 * (15 - 1)):0 + (32 * (15 - 1))] = c{
+                0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0 }
+                matrix_values.d[0 + (32 * (15 - 1)) -1:0] = 0
+        }
+        else{
+            //test setup
+            matrix_values.d[31 + (32 * (15 - 0)):16 + (32 * (15 - 0))] = c{
+                0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0 }
+            matrix_values.d[15 + (32 * (15 - 0)):0 + (32 * (15 - 0))] = c{
+                0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0 }
+            matrix_values.d[0 + (32 * (15 - 0)) -1:0] = 0
+        }
+        
+        led_encoding.d = matrix_values.q
+        
+        // connect reverser to driver
+        index_reverser.input_address = driver.pixel_address
+        pixel_address = index_reverser.output_address
+        
+        // get current color in encoding value for this pixel -- double check if needed
+        repeat(index, $clog2(ENCODING_AMOUNT)){
+            current_pixel_color_encoding[index] = led_encoding.q[2*pixel_address+index]
+        }
+        
+        // based on the encoding extracted from dff led_encoding, we get the 24bit color value
+        //driver.color = COLOR_ENCODING[DISPLAY[$resize(pixel_address, $clog2($width(DISPLAY, 0)))]] 
+        driver.color = COLOR_ENCODING[current_pixel_color_encoding] 
+        data = driver.data
+        
+        if(io_dip[2][6]){
+            // or show the addresses 
+            io_led[0] = index_reverser.output_address
+            io_led[1] = DISPLAY[$resize(pixel_address, $clog2($width(DISPLAY, 0)))]
+            io_led[2] = pixel_address 
+        }
+        
+        led[7] = on_off_toggle.q
+        
+    }
+}
