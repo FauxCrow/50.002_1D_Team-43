@@ -79,7 +79,6 @@ module game_cu (
     .clk(clk){
         .rst(rst){
             dff game_fsm[$width(States)](#INIT(States.IDLE)) 
-            dff state_delay[10](#INIT(0))
         }
     }
     
@@ -98,7 +97,6 @@ module game_cu (
         
         // connect dffs
         game_fsm.d = game_fsm.q
-        state_delay.d = state_delay.q
         
         if (rst){
             game_fsm.d = States.IDLE
