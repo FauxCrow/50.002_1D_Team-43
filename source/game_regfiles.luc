@@ -48,8 +48,8 @@ module game_regfiles (
                 d5 : p1_attributes.d[8] = data[0] // temp var, for compare, stored in p1
                 d6 : p1_attributes.d = data // entire dff, to clear p1
                 
-                d7 : p1_attributes.d[5] = data[0] // temp win, stored in p1
-                d8 : p1_attributes.d[6] = data[0] // temp lose, stored in p1
+                d7 : p1_attributes.d[5] = data[0] // temp p1 win, stored in p1
+                d8 : p1_attributes.d[6] = data[0] // temp p2 win, stored in p1
                 
                 d9 : p2_attributes.d[31:24] = data[7:0] // write to p2 prev row
                 d10 : p2_attributes.d[23:16] = data[7:0] // write to p2 current row
@@ -70,8 +70,8 @@ module game_regfiles (
             d4 : out_a = c{27x{0}, p1_attributes.q[4:0]} // level
             d5 : out_a = c{31x{0}, p1_attributes.q[8]} // temp var
             d6 : out_a = p1_attributes.q // entire p1 dff, to clear
-            d7 : out_a = c{31x{0}, p1_attributes.q[5]} // win
-            d8 : out_a = c{31x{0}, p1_attributes.q[6]} // lose
+            d7 : out_a = c{31x{0}, p1_attributes.q[5]} // p1 win
+            d8 : out_a = c{31x{0}, p1_attributes.q[6]} // p2 win
             d9 : out_a = c{24x{0}, p2_attributes.q[31:24]} // p2 prev row
             d10 : out_a = c{24x{0}, p2_attributes.q[23:16]} // p2 current row
             d11 : out_a = c{24x{0}, p2_attributes.q[13]} // p2 direction
@@ -90,8 +90,8 @@ module game_regfiles (
             d4 : out_b = c{27x{0}, p1_attributes.q[4:0]} // level
             d5 : out_b = c{31x{0}, p1_attributes.q[8]} // temp var
             d6 : out_b = p1_attributes.q // entire dff, to clear
-            d7 : out_b = c{31x{0}, p1_attributes.q[5]} // win
-            d8 : out_b = c{31x{0}, p1_attributes.q[6]} // lose
+            d7 : out_b = c{31x{0}, p1_attributes.q[5]} // p1 win
+            d8 : out_b = c{31x{0}, p1_attributes.q[6]} // p2 win
             d9 : out_b = c{24x{0}, p2_attributes.q[31:24]} // p2 prev row
             d10 : out_b = c{24x{0}, p2_attributes.q[23:16]} // p2 current row
             d11 : out_b = c{24x{0}, p2_attributes.q[13]} // p2 direction

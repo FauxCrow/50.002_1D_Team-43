@@ -1,0 +1,325 @@
+module display#(
+    COLUMN_DIMENSION = 16d16 : COLUMN_DIMENSION > 0,
+    ROW_DIMENSION = 16d16 : ROW_DIMENSION > 0,
+    PIXEL_COUNT = 16d256 : PIXEL_COUNT > 0,
+    BUFFER_SIZE = 1024 : BUFFER_SIZE > 0 // ensure this value is larger than PIXEL_COUNT * $clog2(COLOR_ENCODING)
+) (
+    input clk,              // 100MHz clock
+    input rst,            // reset button (active low)
+    output led[8],          // 8 user controllable LEDs
+    output io_led[3][8],    // LEDs on IO Shield
+    output io_segment[8],   // 7-segment LEDs on IO Shield
+    output io_select[4],    // Digit select on IO Shield
+    input io_button[5],     // 5 buttons on IO Shield
+    input io_dip[3][8],      // DIP switches on IO Shield
+    input p1_win[1],
+    input p2_win[1],
+    input both_win[1],
+    input p1_curr_row[8],
+    input p2_curr_row[8],
+    input level[5],
+    output data
+) {
+    
+    // GREEN (00), BLUE (10), RED (01), OFF (00)
+    const COLOR_ENCODING = {24h0000FF, 24hFF0000, 24h00FF00, 24h0}     
+    const ENCODING_AMOUNT = $width(COLOR_ENCODING, 0)
+    
+    sig pixel_address[BUFFER_SIZE]
+    sig current_pixel_color_encoding[$clog2(ENCODING_AMOUNT)]
+    
+    const CLK_FREQ = $is_sim() ? 1000 : 100000000
+    index_reverser index_reverser(#COLUMN_DIMENSION(COLUMN_DIMENSION), #SIZE($clog2(PIXEL_COUNT))) 
+    
+    .clk(clk){
+        .rst(rst){
+            dff on_off_toggle
+            dff led_encoding[BUFFER_SIZE](#INIT(2)) 
+            dff matrix_values[512](#INIT(0))
+        }
+        
+    }
+    
+    const P1_WIN_DISPLAY = $reverse({
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b11, 2b11, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b01, 2b01, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00,
+            2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00,2b00,
+            2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00,2b00,
+            2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00,
+            2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00,
+            2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00, 2b00, 2b00,2b00, 
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b01, 2b10, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00, 
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00
+        })
+    
+    const P2_WIN_DISPLAY = $reverse({
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b11, 2b11, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b01, 2b01, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00,
+            2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00,2b00,
+            2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00,2b00,
+            2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00,
+            2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00,
+            2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00, 2b00, 2b00,2b00, 
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b01, 2b10, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00, 
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00
+        })
+    
+    const BOTH_WIN_DISPLAY = $reverse({
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b11, 2b11, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b01, 2b01, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00,
+            2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00,2b00,
+            2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00,2b00,
+            2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00,
+            2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00,
+            2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00, 2b00, 2b00,2b00, 
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b01, 2b01, 2b01, 2b01, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b01, 2b10, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00, 
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00,2b00,
+            2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00, 2b00
+        })
+    
+    ws2812b_driver driver(#PIXEL_COUNT(PIXEL_COUNT), .rst(rst), .clk(clk))
+    
+    sig is_playing
+    
+    always {
+        
+        led = 8h00            
+        io_led = 3x{{8h00}}
+        io_segment = 8hff
+        io_select = 4hf
+        data = 0
+        
+        is_playing = b0 // starts as 0 -- game running
+        
+        // connect DFFs
+        led_encoding.d = led_encoding.q
+        on_off_toggle.d = on_off_toggle.q
+        matrix_values.d = matrix_values.q
+        
+        // update driver based on on-off toggle
+        driver.update = on_off_toggle.q 
+        driver.clear = 0
+        
+        // connect reverser to driver, pixel address will stay inverted for ease of code
+        index_reverser.input_address = driver.pixel_address        
+        pixel_address = index_reverser.output_address
+        
+        // once win signal is thrown, change what is displayed to preset displays
+        if (p1_win | p2_win | both_win){
+            is_playing = b1
+        }
+        
+        // update current matrix numbers based on level and current rows
+        case (level){
+            b00000: // level 0
+                matrix_values.d[31 + (32 * (15 - 0)):16 + (32 * (15 - 0))] = c{
+                    0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0 }
+                matrix_values.d[15 + (32 * (15 - 0)):0 + (32 * (15 - 0))] = c{
+                    0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0 }
+                matrix_values.d[0 + (32 * (15 - 0)) -1:0] = 0
+            b00001: // level 1
+                matrix_values.d[31 + (32 * (15 - 1)):16 + (32 * (15 - 1))] = c{
+                    0, p1_curr_row[0], 0, p1_curr_row[1], 0, p1_curr_row[2], 0, p1_curr_row[3],
+                    0, p1_curr_row[4], 0, p1_curr_row[5], 0, p1_curr_row[6], 0, p1_curr_row[7]
+                }
+                matrix_values.d[15 + (32 * (15 - 1)):0 + (32 * (15 - 1))] = c{
+                    p2_curr_row[0], 0, p2_curr_row[1], 0, p2_curr_row[2], 0, p2_curr_row[3], 0, 
+                    p2_curr_row[4], 0, p2_curr_row[5], 0, p2_curr_row[6], 0, p2_curr_row[7], 0
+                }
+                matrix_values.d[0 + (32 * (15 - 1)) -1:0] = 0
+            b00010: // level 2
+                matrix_values.d[31 + (32 * (15 - 2)):16 + (32 * (15 - 2))] = c{
+                    0, p1_curr_row[0], 0, p1_curr_row[1], 0, p1_curr_row[2], 0, p1_curr_row[3],
+                    0, p1_curr_row[4], 0, p1_curr_row[5], 0, p1_curr_row[6], 0, p1_curr_row[7]
+                }
+                matrix_values.d[15 + (32 * (15 - 2)):0 + (32 * (15 - 2))] = c{
+                    p2_curr_row[0], 0, p2_curr_row[1], 0, p2_curr_row[2], 0, p2_curr_row[3], 0, 
+                    p2_curr_row[4], 0, p2_curr_row[5], 0, p2_curr_row[6], 0, p2_curr_row[7], 0
+                }
+                matrix_values.d[0 + (32 * (15 - 2)) -1:0] = 0
+            b00011: // level 3
+                matrix_values.d[31 + (32 * (15 - 3)):16 + (32 * (15 - 3))] = c{
+                    0, p1_curr_row[0], 0, p1_curr_row[1], 0, p1_curr_row[2], 0, p1_curr_row[3],
+                    0, p1_curr_row[4], 0, p1_curr_row[5], 0, p1_curr_row[6], 0, p1_curr_row[7]
+                }
+                matrix_values.d[15 + (32 * (15 - 3)):0 + (32 * (15 - 3))] = c{
+                    p2_curr_row[0], 0, p2_curr_row[1], 0, p2_curr_row[2], 0, p2_curr_row[3], 0, 
+                    p2_curr_row[4], 0, p2_curr_row[5], 0, p2_curr_row[6], 0, p2_curr_row[7], 0
+                }
+                matrix_values.d[0 + (32 * (15 - 3)) -1:0] = 0
+            b00100: // level 4
+                matrix_values.d[31 + (32 * (15 - 4)):16 + (32 * (15 - 4))] = c{
+                    0, p1_curr_row[0], 0, p1_curr_row[1], 0, p1_curr_row[2], 0, p1_curr_row[3],
+                    0, p1_curr_row[4], 0, p1_curr_row[5], 0, p1_curr_row[6], 0, p1_curr_row[7]
+                }
+                matrix_values.d[15 + (32 * (15 - 4)):0 + (32 * (15 - 4))] = c{
+                    p2_curr_row[0], 0, p2_curr_row[1], 0, p2_curr_row[2], 0, p2_curr_row[3], 0, 
+                    p2_curr_row[4], 0, p2_curr_row[5], 0, p2_curr_row[6], 0, p2_curr_row[7], 0
+                }
+                matrix_values.d[0 + (32 * (15 - 4)) -1:0] = 0
+            b00101: // level 5
+                matrix_values.d[31 + (32 * (15 - 5)):16 + (32 * (15 - 5))] = c{
+                    0, p1_curr_row[0], 0, p1_curr_row[1], 0, p1_curr_row[2], 0, p1_curr_row[3],
+                    0, p1_curr_row[4], 0, p1_curr_row[5], 0, p1_curr_row[6], 0, p1_curr_row[7]
+                }
+                matrix_values.d[15 + (32 * (15 - 5)):0 + (32 * (15 - 5))] = c{
+                    p2_curr_row[0], 0, p2_curr_row[1], 0, p2_curr_row[2], 0, p2_curr_row[3], 0, 
+                    p2_curr_row[4], 0, p2_curr_row[5], 0, p2_curr_row[6], 0, p2_curr_row[7], 0
+                }
+                matrix_values.d[0 + (32 * (15 - 5)) -1:0] = 0
+            b00110: // level 6
+                matrix_values.d[31 + (32 * (15 - 6)):16 + (32 * (15 - 6))] = c{
+                    0, p1_curr_row[0], 0, p1_curr_row[1], 0, p1_curr_row[2], 0, p1_curr_row[3],
+                    0, p1_curr_row[4], 0, p1_curr_row[5], 0, p1_curr_row[6], 0, p1_curr_row[7]
+                }
+                matrix_values.d[15 + (32 * (15 - 6)):0 + (32 * (15 - 6))] = c{
+                    p2_curr_row[0], 0, p2_curr_row[1], 0, p2_curr_row[2], 0, p2_curr_row[3], 0, 
+                    p2_curr_row[4], 0, p2_curr_row[5], 0, p2_curr_row[6], 0, p2_curr_row[7], 0
+                }
+                matrix_values.d[0 + (32 * (15 - 6)) -1:0] = 0
+            b00111: // level 7
+                matrix_values.d[31 + (32 * (15 - 7)):16 + (32 * (15 - 7))] = c{
+                    0, p1_curr_row[0], 0, p1_curr_row[1], 0, p1_curr_row[2], 0, p1_curr_row[3],
+                    0, p1_curr_row[4], 0, p1_curr_row[5], 0, p1_curr_row[6], 0, p1_curr_row[7]
+                }
+                matrix_values.d[15 + (32 * (15 - 7)):0 + (32 * (15 - 7))] = c{
+                    p2_curr_row[0], 0, p2_curr_row[1], 0, p2_curr_row[2], 0, p2_curr_row[3], 0, 
+                    p2_curr_row[4], 0, p2_curr_row[5], 0, p2_curr_row[6], 0, p2_curr_row[7], 0
+                }
+                matrix_values.d[0 + (32 * (15 - 7)) -1:0] = 0
+            b01000: // level 8
+                matrix_values.d[31 + (32 * (15 - 8)):16 + (32 * (15 - 8))] = c{
+                    0, p1_curr_row[0], 0, p1_curr_row[1], 0, p1_curr_row[2], 0, p1_curr_row[3],
+                    0, p1_curr_row[4], 0, p1_curr_row[5], 0, p1_curr_row[6], 0, p1_curr_row[7]
+                }
+                matrix_values.d[15 + (32 * (15 - 8)):0 + (32 * (15 - 8))] = c{
+                    p2_curr_row[0], 0, p2_curr_row[1], 0, p2_curr_row[2], 0, p2_curr_row[3], 0, 
+                    p2_curr_row[4], 0, p2_curr_row[5], 0, p2_curr_row[6], 0, p2_curr_row[7], 0
+                }
+                matrix_values.d[0 + (32 * (15 - 8)) -1:0] = 0
+            b01001: // level 9
+                matrix_values.d[31 + (32 * (15 - 9)):16 + (32 * (15 - 9))] = c{
+                    0, p1_curr_row[0], 0, p1_curr_row[1], 0, p1_curr_row[2], 0, p1_curr_row[3],
+                    0, p1_curr_row[4], 0, p1_curr_row[5], 0, p1_curr_row[6], 0, p1_curr_row[7]
+                }
+                matrix_values.d[15 + (32 * (15 - 9)):0 + (32 * (15 - 9))] = c{
+                    p2_curr_row[0], 0, p2_curr_row[1], 0, p2_curr_row[2], 0, p2_curr_row[3], 0, 
+                    p2_curr_row[4], 0, p2_curr_row[5], 0, p2_curr_row[6], 0, p2_curr_row[7], 0
+                }
+                matrix_values.d[0 + (32 * (15 - 9)) -1:0] = 0
+            b01010: // level 10
+                matrix_values.d[31 + (32 * (15 - 10)):16 + (32 * (15 - 10))] = c{
+                    0, p1_curr_row[0], 0, p1_curr_row[1], 0, p1_curr_row[2], 0, p1_curr_row[3],
+                    0, p1_curr_row[4], 0, p1_curr_row[5], 0, p1_curr_row[6], 0, p1_curr_row[7]
+                }
+                matrix_values.d[15 + (32 * (15 - 10)):0 + (32 * (15 - 10))] = c{
+                    p2_curr_row[0], 0, p2_curr_row[1], 0, p2_curr_row[2], 0, p2_curr_row[3], 0, 
+                    p2_curr_row[4], 0, p2_curr_row[5], 0, p2_curr_row[6], 0, p2_curr_row[7], 0
+                }
+                matrix_values.d[0 + (32 * (15 - 10)) -1:0] = 0
+            b01011: // level 11
+                matrix_values.d[31 + (32 * (15 - 11)):16 + (32 * (15 - 11))] = c{
+                    0, p1_curr_row[0], 0, p1_curr_row[1], 0, p1_curr_row[2], 0, p1_curr_row[3],
+                    0, p1_curr_row[4], 0, p1_curr_row[5], 0, p1_curr_row[6], 0, p1_curr_row[7]
+                }
+                matrix_values.d[15 + (32 * (15 - 11)):0 + (32 * (15 - 11))] = c{
+                    p2_curr_row[0], 0, p2_curr_row[1], 0, p2_curr_row[2], 0, p2_curr_row[3], 0, 
+                    p2_curr_row[4], 0, p2_curr_row[5], 0, p2_curr_row[6], 0, p2_curr_row[7], 0
+                }
+                matrix_values.d[0 + (32 * (15 - 11)) -1:0] = 0
+            b01100: // level 12
+                matrix_values.d[31 + (32 * (15 - 12)):16 + (32 * (15 - 12))] = c{
+                    0, p1_curr_row[0], 0, p1_curr_row[1], 0, p1_curr_row[2], 0, p1_curr_row[3],
+                    0, p1_curr_row[4], 0, p1_curr_row[5], 0, p1_curr_row[6], 0, p1_curr_row[7]
+                }
+                matrix_values.d[15 + (32 * (15 - 12)):0 + (32 * (15 - 12))] = c{
+                    p2_curr_row[0], 0, p2_curr_row[1], 0, p2_curr_row[2], 0, p2_curr_row[3], 0, 
+                    p2_curr_row[4], 0, p2_curr_row[5], 0, p2_curr_row[6], 0, p2_curr_row[7], 0
+                }
+                matrix_values.d[0 + (32 * (15 - 12)) -1:0] = 0
+            b01101: // level 13
+                matrix_values.d[31 + (32 * (15 - 13)):16 + (32 * (15 - 13))] = c{
+                    0, p1_curr_row[0], 0, p1_curr_row[1], 0, p1_curr_row[2], 0, p1_curr_row[3],
+                    0, p1_curr_row[4], 0, p1_curr_row[5], 0, p1_curr_row[6], 0, p1_curr_row[7]
+                }
+                matrix_values.d[15 + (32 * (15 - 13)):0 + (32 * (15 - 13))] = c{
+                    p2_curr_row[0], 0, p2_curr_row[1], 0, p2_curr_row[2], 0, p2_curr_row[3], 0, 
+                    p2_curr_row[4], 0, p2_curr_row[5], 0, p2_curr_row[6], 0, p2_curr_row[7], 0
+                }
+                matrix_values.d[0 + (32 * (15 - 13)) -1:0] = 0
+            b01110: // level 14
+                matrix_values.d[31 + (32 * (15 - 14)):16 + (32 * (15 - 14))] = c{
+                    0, p1_curr_row[0], 0, p1_curr_row[1], 0, p1_curr_row[2], 0, p1_curr_row[3],
+                    0, p1_curr_row[4], 0, p1_curr_row[5], 0, p1_curr_row[6], 0, p1_curr_row[7]
+                }
+                matrix_values.d[15 + (32 * (15 - 14)):0 + (32 * (15 - 14))] = c{
+                    p2_curr_row[0], 0, p2_curr_row[1], 0, p2_curr_row[2], 0, p2_curr_row[3], 0, 
+                    p2_curr_row[4], 0, p2_curr_row[5], 0, p2_curr_row[6], 0, p2_curr_row[7], 0
+                }
+                matrix_values.d[0 + (32 * (15 - 14)) -1:0] = 0
+            b01111: // level 15
+                matrix_values.d[31 + (32 * (15 - 15)):16 + (32 * (15 - 15))] = c{
+                    0, p1_curr_row[0], 0, p1_curr_row[1], 0, p1_curr_row[2], 0, p1_curr_row[3],
+                    0, p1_curr_row[4], 0, p1_curr_row[5], 0, p1_curr_row[6], 0, p1_curr_row[7]
+                }
+                matrix_values.d[15 + (32 * (15 - 15)):0 + (32 * (15 - 15))] = c{
+                    p2_curr_row[0], 0, p2_curr_row[1], 0, p2_curr_row[2], 0, p2_curr_row[3], 0, 
+                    p2_curr_row[4], 0, p2_curr_row[5], 0, p2_curr_row[6], 0, p2_curr_row[7], 0
+                }
+                matrix_values.d[0 + (32 * (15 - 15)) -1:0] = 0
+        }        
+        
+        led_encoding.d = matrix_values.q
+        
+        // get current color in encoding value for this pixel -- double check if needed 
+        repeat(index, $clog2(ENCODING_AMOUNT)){
+            current_pixel_color_encoding[index] = led_encoding.q[2*pixel_address+index]
+        }
+        
+        // dictate what is shown on screen
+        /*
+        if (is_playing){
+            if (p1_win){
+                driver.color = COLOR_ENCODING[P1_WIN_DISPLAY[$resize(pixel_address, $clog2($width(P1_WIN_DISPLAY, 0)))]] 
+            }
+            else if (p2_win){
+                driver.color = COLOR_ENCODING[P2_WIN_DISPLAY[$resize(pixel_address, $clog2($width(P2_WIN_DISPLAY, 0)))]] 
+            }
+            else if (both_win){
+                driver.color = COLOR_ENCODING[BOTH_WIN_DISPLAY[$resize(pixel_address, $clog2($width(BOTH_WIN_DISPLAY, 0)))]] 
+            }
+            else{
+                // based on the encoding extracted from dff led_encoding, we get the 24bit color value
+                driver.color = COLOR_ENCODING[current_pixel_color_encoding] 
+            }
+        }
+        else{
+            // based on the encoding extracted from dff led_encoding, we get the 24bit color value
+            driver.color = COLOR_ENCODING[current_pixel_color_encoding] 
+        }
+        */
+        driver.color = COLOR_ENCODING[P1_WIN_DISPLAY[$resize(pixel_address, $clog2($width(P1_WIN_DISPLAY, 0)))]] 
+        data = driver.data
+        
+    }
+}

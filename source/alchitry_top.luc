@@ -8,13 +8,22 @@ module alchitry_top (
     output io_segment[8],        // 7-segment LEDs on IO Shield
     output io_select[4],        // Digit select on IO Shield
     input io_button[5],      // 5 buttons on IO Shield
-    input io_dip[3][8]       // DIP switches on IO Shield
+    input io_dip[3][8],       // DIP switches on IO Shield
+    output matrix_data,
+    input p1_button,
+    input p2_button,
+    input reset_button,
+    output p1_led,
+    output p2_led
 ) {
-    
     sig rst                 // reset signal
     
     const CLK_FREQ = $is_sim() ? 1000 : 10000000 // put 1000 for sim, 10000000 otherwise in hardware
     const SLOW_CLOCK_DIV = $is_sim() ? 7 : 25 // put 8  for sim, 25 for hardware -- 24 was pretty good
+    
+    const COLUMN_DIMENSION = 5d16 // how many "columns"? 
+    const ROW_DIMENSION = 5d16 // how many "rows"?
+    const PIXEL_COUNT = 10d256 // how many LEDs in total? 
     
     .clk(clk) {
         // The reset conditioner is used to synchronize the reset signal to the FPGA
@@ -32,6 +41,9 @@ module alchitry_top (
         
         .rst(rst){
             game_datapath main_beta(#SLOW_CLOCK_DIV(SLOW_CLOCK_DIV))
+            display display(.io_button(io_button), .io_dip(io_dip), 
+                #COLUMN_DIMENSION(COLUMN_DIMENSION), #ROW_DIMENSION(ROW_DIMENSION),
+                #PIXEL_COUNT(PIXEL_COUNT))
         }
     }
     
@@ -49,40 +61,74 @@ module alchitry_top (
         io_led = 3x{{8h00}}
         
         //player 1 inputs -- bottom
-        btn_cond_p1.in=io_button[2] //to reduce the bouncing effects of your button 
-        edge_dt_btn_p1.in=btn_cond_p1.out //get the edge of button press
+        //btn_cond_p1.in=io_button[2] //to reduce the bouncing effects of your button 
+        btn_cond_p1.in = p1_button //to reduce the bouncing effects of your button 
+        edge_dt_btn_p1.in = btn_cond_p1.out //get the edge of button press
         main_beta.p1_button = edge_dt_btn_p1.out
         
-        //player 2 inputs -- 
-        btn_cond_p2.in=io_button[1] //to reduce the bouncing effects of your button 
-        edge_dt_btn_p2.in=btn_cond_p2.out //get the edge of button press
+        //player 2 inputs -- middle
+        //btn_cond_p2.in=io_button[1] //to reduce the bouncing effects of your button 
+        btn_cond_p2.in = p2_button //to reduce the bouncing effects of your button 
+        edge_dt_btn_p2.in = btn_cond_p2.out //get the edge of button press
         main_beta.p2_button = edge_dt_btn_p2.out
         
         //reset inputs -- top
-        btn_cond_reset.in=io_button[0] //to reduce the bouncing effects of your button 
-        edge_dt_btn_reset.in=btn_cond_reset.out //get the edge of button press
+        //btn_cond_reset.in = io_button[0] //to reduce the bouncing effects of your button
+        btn_cond_reset.in = reset_button //to reduce the bouncing effects of your button 
+        edge_dt_btn_reset.in = btn_cond_reset.out //get the edge of button press
         main_beta.reset_button = edge_dt_btn_reset.out
-        
-        
         
         if (main_beta.turn){
             io_led[0] = main_beta.p2_row
             io_led[1] = main_beta.p2_prev_row
             io_led[2] = main_beta.level
+            p1_led = 0
+            p2_led = 1
         }
         else{
             io_led[0] = main_beta.p1_row
             io_led[1] = main_beta.p1_prev_row
             io_led[2] = main_beta.level
+            p1_led = 1
+            p2_led = 0
         }
         
-        // side LEDs
+        // once win signal is thrown, change what is displayed to winning LED lights
+        if (main_beta.p1_win){
+            p1_led = 1
+            p2_led = 0
+        }
+        else if (main_beta.p2_win){
+            p1_led = 0
+            p2_led = 1
+        }
+        else if (main_beta.both_win){
+            p1_led = 1
+            p2_led = 1
+        }
+        
+        // setup matrix display
+        display.p1_win = main_beta.p1_win
+        display.p2_win = main_beta.p2_win
+        display.both_win = main_beta.both_win
+        display.p1_curr_row = main_beta.p1_row
+        display.p2_curr_row = main_beta.p2_row
+        display.level = main_beta.level
+        
+        matrix_data = display.data
+        
+        // turn display LEDs
+        p1_led = ~main_beta.turn
+        p2_led = main_beta.turn
+        
+        // side LEDs -- debug
         led[0] = main_beta.debug_slowclock
         led[1] = main_beta.p1_direction
         led[2] = main_beta.p2_direction
-        led[3] = main_beta.turn
-        led[4] = main_beta.p1_win
-        led[5] = main_beta.p2_win
-        led[6] = main_beta.both_win
+        led[3] = main_beta.turn  // connect this to player 2 led
+        led[4] = ~main_beta.turn // connect this to player 1 led
+        led[5] = main_beta.p1_win
+        led[6] = main_beta.p2_win
+        led[7] = main_beta.both_win
     }
 }

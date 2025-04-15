@@ -20,6 +20,7 @@ module ws2812b_driver #(
     input color[24], // BRG, 8 bits each, color to render for all LED
     input clear, // this will clear the LED matrix regardless of update 
     output pixel_address[$clog2(PIXEL_COUNT)],  // Index of the LED, with the color in color[24]
+    // each pixel adress is a number from 0 to 255 (position)
     output data,		//Goes to the first LED in the chain
     output next_pixel, // this turns to 1 for 1 FPGA clock cycle each time we are done with writing a pixel 
     output reset, // this turns to 1 when we are at RESET state

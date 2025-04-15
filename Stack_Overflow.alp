@@ -43,38 +43,8 @@
             },
             {
                 "file": {
-                    "type": "DiskFile",
-                    "path": "source/multi_seven_seg.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "Component",
-                    "path": "Miscellaneous/decoder.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
-                    "path": "source/seven_seg.luc"
-                }
-            },
-            {
-                "file": {
                     "type": "Component",
                     "path": "Miscellaneous/pipeline.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "DiskFile",
-                    "path": "source/pn_gen.luc"
-                }
-            },
-            {
-                "file": {
-                    "type": "Component",
-                    "path": "Miscellaneous/bin_to_dec.luc"
                 }
             },
             {
@@ -166,19 +136,31 @@
                     "type": "DiskFile",
                     "path": "source/ws2812b_driver.luc"
                 }
-            }
-        ],
-        "constraintFiles": [
+            },
             {
                 "file": {
-                    "type": "Component",
-                    "path": "Constraints/io_v1_pulldown.acf"
+                    "type": "DiskFile",
+                    "path": "source/index_reverser.luc"
                 }
             },
             {
                 "file": {
                     "type": "DiskFile",
+                    "path": "source/display.luc"
+                }
+            }
+        ],
+        "constraintFiles": [
+            {
+                "file": {
+                    "type": "DiskFile",
                     "path": "constraint/alchitry.acf"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "constraint/io_v1_pulldown.acf"
                 }
             }
         ],

@@ -1,0 +1,23 @@
+module index_reverser#(
+    SIZE = 8 : SIZE > 1, // width of input and output ports
+    COLUMN_DIMENSION = 8 : COLUMN_DIMENSION > 1
+) (
+    input input_address[SIZE],
+    output output_address[SIZE]
+) {
+    const ODD_BIT_INDEX = $clog2(COLUMN_DIMENSION)
+    const MASK = ODD_BIT_INDEX - 1
+    const MSB_INDEX = SIZE - 1
+    
+    always {
+        
+        // check if we are at odd rows 
+        if (input_address[ODD_BIT_INDEX]){
+            output_address = c{input_address[MSB_INDEX:ODD_BIT_INDEX], input_address[MASK:0] ^ ODD_BIT_INDEXx{b1} }
+        }
+        else{
+            // do not reverse
+            output_address = input_address
+        }
+    }
+}
