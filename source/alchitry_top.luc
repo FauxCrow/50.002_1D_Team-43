@@ -19,7 +19,7 @@ module alchitry_top (
     sig rst                 // reset signal
     
     const CLK_FREQ = $is_sim() ? 1000 : 10000000 // put 1000 for sim, 10000000 otherwise in hardware
-    const SLOW_CLOCK_DIV = $is_sim() ? 7 : 25 // put 8  for sim, 25 for hardware -- 24 was pretty good
+    const SLOW_CLOCK_DIV = $is_sim() ? 7 : 24 // put 8  for sim, 25 for hardware -- 24 was pretty good
     
     const COLUMN_DIMENSION = 5d16 // how many "columns"? 
     const ROW_DIMENSION = 5d16 // how many "rows"?
@@ -41,7 +41,7 @@ module alchitry_top (
         
         .rst(rst){
             game_datapath main_beta(#SLOW_CLOCK_DIV(SLOW_CLOCK_DIV))
-            display display(.io_button(io_button), .io_dip(io_dip), 
+            display display(.io_button(io_button),
                 #COLUMN_DIMENSION(COLUMN_DIMENSION), #ROW_DIMENSION(ROW_DIMENSION),
                 #PIXEL_COUNT(PIXEL_COUNT))
         }
@@ -59,6 +59,7 @@ module alchitry_top (
         io_segment = 8h00
         io_select = 4h0       
         io_led = 3x{{8h00}}
+        matrix_data = 0
         
         //player 1 inputs -- bottom
         //btn_cond_p1.in=io_button[2] //to reduce the bouncing effects of your button 

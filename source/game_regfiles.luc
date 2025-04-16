@@ -37,7 +37,7 @@ module game_regfiles (
     
     always {
         
-        //write port
+        //write port 
         if (we){
             case(write_address){
                 d0 : current_timer.d = data
@@ -50,7 +50,6 @@ module game_regfiles (
                 
                 d7 : p1_attributes.d[5] = data[0] // temp p1 win, stored in p1
                 d8 : p1_attributes.d[6] = data[0] // temp p2 win, stored in p1
-                
                 d9 : p2_attributes.d[31:24] = data[7:0] // write to p2 prev row
                 d10 : p2_attributes.d[23:16] = data[7:0] // write to p2 current row
                 d11 : p2_attributes.d[13] = data[0] // write to p2 direction
